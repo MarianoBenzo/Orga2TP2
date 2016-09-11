@@ -30,6 +30,6 @@ rotar_asm:
 			add rdi, 16
 			add rsi, 16
 			jmp .ciclo
-
-	pop rbp
-	ret
+		.fin:
+			pop rbp
+			ret
