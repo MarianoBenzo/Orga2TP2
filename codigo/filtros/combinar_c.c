@@ -7,10 +7,9 @@ float clamp(float pixel)
 	return res > 255.0 ? 255 : res;
 }
 
-unsigned char clamp(unsigned char pixel)
+unsigned char menor(unsigned char a, unsigned char b)
 {
-	unsigned char res = pixel < 0 ? 0 : pixel;
-	return res > 255 ? 255 : res;
+	return a < b ? 1 : 0;
 }
 
 void combinar_c (
@@ -34,15 +33,28 @@ void combinar_c (
 			bgra_t *p_s_b = (bgra_t*) &src_matrix[f][d * 4];
 			bgra_t *p_d = (bgra_t*) &dst_matrix[f][c * 4];
 			
-			p_d->b = clamp(p_s_a->b - p_s_b->b);			// que pasa si da negativo y es unsigned? se trunca a 0?
-			p_d->g = clamp(p_s_a->g - p_s_b->g);
-			p_d->r = clamp(p_s_a->r - p_s_b->r);
-			p_d->a = clamp(p_s_a->a - p_s_b->a);
+
+			if (menor(p_s_a->b, p_s_b->b) == 1)
+				p_d->b = 0;
+			else
+				p_d->b = p_s_a->b - p_s_b->b;
+			if (menor(p_s_a->g, p_s_b->g) == 1)
+				p_d->g = 0;
+			else
+				p_d->g = p_s_a->g - p_s_b->g;
+			if (menor(p_s_a->r, p_s_b->r) == 1)
+				p_d->r = 0;
+			else
+				p_d->r = p_s_a->r - p_s_b->r;
+			if (menor(p_s_a->a, p_s_b->a) == 1)
+				p_d->a = 0;
+			else
+				p_d->a = p_s_a->a - p_s_b->a;
 			
-			aux = (float) p_d->b;							// está bien este casteo?
+			aux = (float) p_d->b;							
 			aux = aux * alpha;
 			aux = aux / val255;
-			p_d->b = (unsigned char) aux;					// está bien este casteo?
+			p_d->b = (unsigned char) aux;					
 			aux = (float) p_d->g;
 			aux = aux * alpha;
 			aux = aux / val255;
@@ -56,12 +68,13 @@ void combinar_c (
 			aux = aux / val255;
 			p_d->a = (unsigned char) aux;
 			
-			p_d->b = clamp(p_d->b + p_s_b->b);				// que pasa si da mayor a 255 y es un byte?
-			p_d->g = clamp(p_d->g + p_s_b->g);
-			p_d->r = clamp(p_d->r + p_s_b->r);
-			p_d->a = clamp(p_d->b + p_s_b->a);
+			p_d->b = p_d->b + p_s_b->b;						// no se puede pasar porque anteriormente le resté este mismo pixel y lo dividi por 255
+			p_d->g = p_d->g + p_s_b->g;
+			p_d->r = p_d->r + p_s_b->r;
+			p_d->a = p_d->b + p_s_b->a;
 			
 			d--;
 			}
+		d = cols - 1;
 	}
 }

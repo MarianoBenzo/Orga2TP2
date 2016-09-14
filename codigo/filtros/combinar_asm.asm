@@ -19,6 +19,7 @@
 
 section .rodata
 val255: dd 255.0, 255.0, 255.0, 255.0
+val01: dd 0, 1
 
 global combinar_asm
 
@@ -32,11 +33,15 @@ combinar_asm:
 	push rbx
 	sub rsp, 8
 
-	shr edx, 2				; itero de a 4 pixels (dentro de las columnas)
-	xor rax, rax			; copio el valor de las columnas porque itero sobre ese valor
-	mov eax, edx		
+	; limpio la parte alta de rdx
+	mov rax, [val01]		 	; rax = 0x00000000FFFFFFFF
+	and rdx, rax
+	lea rbx, [rdi + rdx * 4]
+	sub rbx, 16					; me posiciono sobre cuatro elementos antes del ultimo para el reflejo vertical
 
-	; en rbx tengo el puntero a la imagen pero en reflejo vertical (leo de der. a izq.)
+	shr edx, 2					; itero de a 4 pixels (dentro de las columnas)
+	xor rax, rax				; copio el valor de las columnas porque itero sobre ese valor
+	mov eax, edx		
 
 	movdqu xmm6, [val255]		; xmm6 = | 255.0 | 255.0 | 255.0 | 255.0 |
 	xorps xmm3, xmm3
@@ -99,14 +104,16 @@ combinar_asm:
 		jne .seguir
 		mov edx, eax			; terminé de recorrer una fila
 		dec ecx
+		shl eax, 2				; recupero el valor original de la cant de columnas
+		lea rbx, [rdi + rax * 4]
+		shr eax, 2				; vuelvo a dividirlo para iterar
+		add rbx, 16				; ya estoy posicionado donde quiero, pero despues se lo resto
 		.seguir:
 			add rdi, 16
 			add rsi, 16
 			sub rbx, 16
 			jmp .ciclo
 	.fin:
-		call combinar_c
-
 		add rsp, 8
 		pop rbx
 		pop rbp
