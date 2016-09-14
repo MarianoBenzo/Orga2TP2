@@ -34,19 +34,19 @@ void combinar_c (
 			bgra_t *p_d = (bgra_t*) &dst_matrix[f][c * 4];
 			
 
-			if (menor(p_s_a->b, p_s_b->b) == 1)
+			if (menor(p_s_a->b, p_s_b->b))
 				p_d->b = 0;
 			else
 				p_d->b = p_s_a->b - p_s_b->b;
-			if (menor(p_s_a->g, p_s_b->g) == 1)
+			if (menor(p_s_a->g, p_s_b->g))
 				p_d->g = 0;
 			else
 				p_d->g = p_s_a->g - p_s_b->g;
-			if (menor(p_s_a->r, p_s_b->r) == 1)
+			if (menor(p_s_a->r, p_s_b->r))
 				p_d->r = 0;
 			else
 				p_d->r = p_s_a->r - p_s_b->r;
-			if (menor(p_s_a->a, p_s_b->a) == 1)
+			if (menor(p_s_a->a, p_s_b->a))
 				p_d->a = 0;
 			else
 				p_d->a = p_s_a->a - p_s_b->a;
@@ -67,11 +67,11 @@ void combinar_c (
 			aux = aux * alpha;
 			aux = aux / val255;
 			p_d->a = (unsigned char) aux;
-			
+
 			p_d->b = p_d->b + p_s_b->b;						// no se puede pasar porque anteriormente le resté este mismo pixel y lo dividi por 255
 			p_d->g = p_d->g + p_s_b->g;
 			p_d->r = p_d->r + p_s_b->r;
-			p_d->a = p_d->b + p_s_b->a;
+			p_d->a = p_d->a + p_s_b->a;
 			
 			d--;
 			}

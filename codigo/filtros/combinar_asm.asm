@@ -19,7 +19,7 @@
 
 section .rodata
 val255: dd 255.0, 255.0, 255.0, 255.0
-val01: dd 0, 1
+invertir: db 0x0C, 0x0D, 0x0E, 0x0F, 0x08, 0x09, 0x0A, 0x0B, 0x04, 0x05, 0x06, 0x07, 0x00, 0x01, 0x02, 0x03
 
 global combinar_asm
 
@@ -33,16 +33,14 @@ combinar_asm:
 	push rbx
 	sub rsp, 8
 
-	; limpio la parte alta de rdx
-	mov rax, [val01]		 	; rax = 0x00000000FFFFFFFF
-	and rdx, rax
-	lea rbx, [rdi + rdx * 4]
-	sub rbx, 16					; me posiciono sobre cuatro elementos antes del ultimo para el reflejo vertical
+	xor rax, rax
+	mov eax, edx				
+	lea rbx, [rdi + rax * 4]	; rbx contiene el puntero al siguiente elemento de la ultima columna
+	sub rbx, 16
 
-	shr edx, 2					; itero de a 4 pixels (dentro de las columnas)
-	xor rax, rax				; copio el valor de las columnas porque itero sobre ese valor
-	mov eax, edx		
+	shr edx, 2					; itero de a 4 pixels (dentro de las columnas)		
 
+	movdqu xmm8, [invertir]
 	movdqu xmm6, [val255]		; xmm6 = | 255.0 | 255.0 | 255.0 | 255.0 |
 	xorps xmm3, xmm3
 	addss xmm3, xmm0			; xmm3 = | 0 | 0 | 0 | alpha |
@@ -57,7 +55,8 @@ combinar_asm:
 		dec edx	
 
 		movdqu xmm1, [rdi]		; xmm1 = | px3_a | px2_a | px1_a | px0_a |
-		movdqu xmm2, [rbx]		; xmm2 = | px3_b | px2_b | px1_b | px0_b |
+		movdqu xmm2, [rbx]		; xmm2 = | px0_b | px1_b | px2_b | px3_b |
+		pshufb xmm2, xmm8		; xmm2 = | px3_b | px2_b | px1_b | px0_b |
 		psubusb xmm1, xmm2		; xmm1 = | px3_a - px3_b | px2_a - px2_b | px1_a - px1_b | px0_a - px0_b |
 		; desempaqueto cada pixel a 16 bytes
 		movdqu xmm3, xmm1		; xmm3 = | px3_a - px3_b | px2_a - px2_b | px1_a - px1_b | px0_a - px0_b |
@@ -104,9 +103,8 @@ combinar_asm:
 		jne .seguir
 		mov edx, eax			; terminé de recorrer una fila
 		dec ecx
-		shl eax, 2				; recupero el valor original de la cant de columnas
+		shr edx, 2				
 		lea rbx, [rdi + rax * 4]
-		shr eax, 2				; vuelvo a dividirlo para iterar
 		add rbx, 16				; ya estoy posicionado donde quiero, pero despues se lo resto
 		.seguir:
 			add rdi, 16

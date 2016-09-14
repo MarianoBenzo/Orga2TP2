@@ -18,8 +18,8 @@ rotar_asm:
 		cmp ecx, 0 			; si no hay mas filas por recorrer, termine
 		je .fin
 		dec edx				
-		movdqu xmm0, [rdi]	; xmm0: | b g r a | b g r a | b g r a | b g r a |
-		pshufb xmm0, xmm8	; xmm0: | g r b a | g r b a | g r b a | g r b a |
+		movdqu xmm0, [rdi]	; xmm0: | a r g b | a r g b | a r g b | a r g b | 
+		pshufb xmm0, xmm8	; xmm0: | a b r g | a b r g | a b r g | a b r g |
 		movdqu [rsi], xmm0
 
 		cmp edx, 0
