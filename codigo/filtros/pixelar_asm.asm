@@ -66,10 +66,6 @@ pixelar_asm:
 		divps xmm0, xmm6			; xmm0 = | (p3a + p1a + p4a + p2a) / 4 |
 		; convierto cada color del pixel de float a entero
 		cvtps2dq xmm0, xmm0
-		; empaqueto cada pixel a 4 bytes
-		packusdw xmm0, xmm0		; xmm0 = | (p3a + p1a + p4a + p2a) / 4 | (p3a + p1a + p4a + p2a) / 4 |
-		packuswb xmm0, xmm0		; xmm0 = | (p3a + p1a + p4a + p2a) / 4 | (p3a + p1a + p4a + p2a) / 4 | (p3a + p1a + p4a + p2a) / 4 | (p3a + p1a + p4a + p2a) / 4 |
-		
 
 		paddusw xmm2, xmm3			; xmm2 = | p4b + p2b | p3b + p1b |
 		movdqu xmm3, xmm2			; xmm3 = | p4b + p2b | p3b + p1b |
@@ -82,17 +78,21 @@ pixelar_asm:
 		divps xmm2, xmm6			; xmm2 = | (p3b + p1b + p4b + p2b) / 4 |
 		; convierto cada color del pixel de float a entero
 		cvtps2dq xmm2, xmm2
-		; empaqueto cada pixel a 4 bytes
-		packusdw xmm2, xmm2			; xmm2 = | (p3b + p1b + p4b + p2b) / 4 | (p3b + p1b + p4b + p2b) / 4 |
-		packuswb xmm2, xmm2			; xmm2 = | (p3b + p1b + p4b + p2b) / 4 | (p3b + p1b + p4b + p2b) / 4 | (p3b + p1b + p4b + p2b) / 4 | (p3b + p1b + p4b + p2b) / 4 |
 		
-		movdqu [rsi], xmm0
+		; empaqueto cada pixel a 4 bytes
+		packusdw xmm0, xmm0			; xmm0 = | (p3a + p1a + p4a + p2a) / 4 | (p3a + p1a + p4a + p2a) / 4 |
+		packusdw xmm2, xmm2			; xmm2 = | (p3b + p1b + p4b + p2b) / 4 | (p3b + p1b + p4b + p2b) / 4 |
+		packuswb xmm2, xmm0			; xmm2 = | (p3a + p1a + p4a + p2a) / 4 | (p3a + p1a + p4a + p2a) / 4 | (p3b + p1b + p4b + p2b) / 4 | (p3b + p1b + p4b + p2b) / 4 |
+		
+		movdqu [rsi], xmm2
 		movdqu [rsi + r8], xmm2
 			
 		cmp edx, 0
 		jne .seguir
 		mov edx, eax				; terminé de recorrer una fila
 		dec ecx
+		add rdi, 16
+		add rsi, 16
 		add rdi, r8
 		add rsi, r8
 		jmp .ciclo
