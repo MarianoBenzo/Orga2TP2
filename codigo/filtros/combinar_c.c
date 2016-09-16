@@ -1,16 +1,4 @@
-
 #include "../tp2.h"
-
-float clamp(float pixel)
-{
-	float res = pixel < 0.0 ? 0.0 : pixel;
-	return res > 255.0 ? 255 : res;
-}
-
-unsigned char menor(unsigned char a, unsigned char b)
-{
-	return a < b ? 1 : 0;
-}
 
 void combinar_c (
 	unsigned char *src, 
