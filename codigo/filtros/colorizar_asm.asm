@@ -21,8 +21,9 @@ section .rodata
 intercambiar: DB 0x00, 0x01, 0x02, 0x03, 0x08, 0x09, 0x0A, 0x0B, 0x04, 0x05, 0x06, 0x07, 0x0C, 0x0D, 0x0E, 0x0F
 acercar: DB 0x00, 0x01, 0x02, 0x03, 0x0C, 0x0D, 0x0E, 0x0F, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B
 negar: DW 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF
-unosW: DW 1, 1, 1, 1, 1, 1, 1, 1
-unosF: DD 1.0, 1.0, 1.0, 1.0
+val1W: DW 1, 1, 1, 1, 1, 1, 1, 1
+val1F: DD 1.0, 1.0, 1.0, 1.0
+val255F: DD 255.0, 255.0, 255.0, 255.0
 
 global colorizar_asm
 
@@ -60,8 +61,8 @@ colorizar_asm:
 	pslldq xmm3, 8				; xmm3 = | alpha | alpha | 0 | 0 |
 	addps xmm0, xmm3 			; xmm0 = | alpha | alpha | alpha | alpha |
 	movdqu xmm8, [negar]		; xmm8 = | 0xFFFF | 0xFFFF | 0xFFFF | 0xFFFF | 0xFFFF | 0xFFFF | 0xFFFF | 0xFFFF |
-	movdqu xmm9, [unosW]		; xmm9 = | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 
-	movdqu xmm10, [unosF]		; xmm10= | 1.0 | 1.0 | 1.0 | 1.0 |
+	movdqu xmm9, [val1W]		; xmm9 = | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 
+	movdqu xmm10, [val1F]		; xmm10= | 1.0 | 1.0 | 1.0 | 1.0 |
 	.ciclo:
 		cmp ecx, 0	 				; si no hay mas filas por recorrer, termine
 		je .fin
@@ -135,8 +136,29 @@ colorizar_asm:
 		movdqu xmm5, xmm10 			; xmm5 = | 1.0 | 1.0 | 1.0 | 1.0 |
 		addps xmm4, xmm1 			; xmm4 = | ? | phiB_1 | phiG_1 | phiR_1 |
 		addps xmm5, xmm3 			; xmm5 = | ? | phiB_2 | phiG_2 | phiR_2 |
-		; en xmm2 tengo los datos de los pixeles, extender cada uno a dword (primero shiftear) y hacer las cuentas
-
+		; acomodo los resultados 
+		movdqu xmm1, xmm4			; xmm1 = | ? | phiB_1 | phiG_1 | phiR_1 |
+		movdqu xmm3, xmm5 			; xmm3 = | ? | phiB_2 | phiG_2 | phiR_2 |
+		; 102 = 11 00 01 10
+		shufps xmm4, xmm1, 102 		; xmm4 = | ? | phiR_1 | phiG_1 | phiB_1 |
+		shufps xmm5, xmm3, 102 		; xmm5 = | ? | phiR_2 | phiG_2 | phiB_2 |
+		; extiendo los pixeles originales a float
+		psrldq xmm2, 4				; xmm2 = | ? | ? | PX2 | PX1 |
+		movdqu xmm3, xmm2 			; xmm3 = | ? | ? | PX2 | PX1 |
+		pxor xmm7, xmm7 			; xmm7 = | 0 | 0 | 0 | 0 |
+		punpcklbw xmm3, xmm7  		; xmm3 = | PX2 | PX1 |
+		movdqu xmm1, xmm3			; xmm1 = | PX2 | PX1 |
+		punpcklwd xmm1, xmm7 		; xmm1 = | PX1 |
+		punpckhwd xmm3, xmm7 		; xmm3 = | PX2 |
+		cvtdq2ps xmm1, xmm1 		; xmm1 = | A_1 | R_1 | G_1 | B_1 |
+		cvtdq2ps xmm3, xmm3 		; xmm3 = | A_2 | R_2 | G_2 | B_2 |
+		mulps xmm1, xmm4 			; xmm1 = | ? | R_1 * phiR_1 | G_1 * phiG_1 | B_1 * phiB_1 |
+		mulps xmm3, xmm5 			; xmm3 = | ? | R_2 * phiR_2 | G_2 * phiG_2 | B_2 * phiB_2 |
+		movdqu xmm4, [val255F]		; xmm4 = | 255.0 | 255.0 | 255.0 | 255.0 | 
+		movdqu xmm5, [val255F]		; xmm5 = | 255.0 | 255.0 | 255.0 | 255.0 | 
+		; hago la mascara con aquellos numeros mayores a 255
+		cmpps xmm4, xmm1, 1 		; compare less than -> tengo en true aquellos mayores a 255
+		cmpps xmm5, xmm3, 1
 
 		cmp edx, 0
 		jne .seguir
