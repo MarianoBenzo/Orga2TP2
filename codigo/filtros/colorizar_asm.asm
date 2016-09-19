@@ -64,7 +64,6 @@ colorizar_asm:
 	movdqu xmm9, [val1W]		; xmm9 = | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 
 	movdqu xmm10, [val1F]		; xmm10= | 1.0 | 1.0 | 1.0 | 1.0 |
 	movdqu xmm11, [val255F]		; xmm11= | 255.0 | 255.0 | 255.0 | 255.0 | 
-	movdqu xmm12, [val255F]		; xmm12= | 255.0 | 255.0 | 255.0 | 255.0 | 
 	.ciclo:
 		cmp ecx, 0	 				; si no hay mas filas por recorrer, termine
 		je .fin
@@ -74,7 +73,7 @@ colorizar_asm:
 		movdqu xmm1, [rdi]			; xmm1 = | px3_a | px2_a | px1_a | px0_a |
 		movdqu xmm2, [rbx]			; xmm2 = | px3_b | PX2_b | PX1_b | px0_b |
 		movdqu xmm3, [r12]			; xmm3 = | px3_c | px2_c | px1_c | px0_c |
-
+		; obtengo el maximo de cada color 
 		pmaxub xmm1, xmm2			; xmm1 = | max(px3_a, px3_b) | max(px2_a, PX2_b) | max(px1_a, PX1_b) | max(px0_a, px0_b) |
 		pmaxub xmm1, xmm3			; xmm1 = | max(col_3) | max(col_2) | max(col_1) | max(col_0) |
 		movdqu xmm3, xmm1			; xmm3 = | max(col_3) | max(col_2) | max(col_1) | max(col_0) |
@@ -95,9 +94,9 @@ colorizar_asm:
 		pshufhw xmm1, xmm3, 132		; xmm1 = | maxR_2 | maxB_2 | maxG_2 | maxB_2 | maxR_1 | maxB_1 | maxG_1 | maxB_1 |
 		; 31 = 00 01 11 11
 		; copio al maxB, pero esa columna no me importa
-		pshuflw xmm3, xmm1, 31		; xmm3 = | maxR_2 | maxR_2 | maxG_2 | maxB_2 | maxB_1 | maxG_1 | maxR_1 | maxR_1 |
+		pshuflw xmm3, xmm1, 31		; xmm3 = | maxR_2 | maxB_2 | maxG_2 | maxB_2 | maxB_1 | maxG_1 | maxR_1 | maxR_1 |
 		; uso a xmm4 de auxiliar para no perder la parte baja en el shuffle
-		movdqu xmm4, xmm3			; xmm4 = | maxR_2 | maxR_2 | maxG_2 | maxB_2 | maxB_1 | maxG_1 | maxR_1 | maxR_1 |
+		movdqu xmm4, xmm3			; xmm4 = | maxR_2 | maxB_2 | maxG_2 | maxB_2 | maxB_1 | maxG_1 | maxR_1 | maxR_1 |
 		pshufhw xmm3, xmm4, 31		; xmm3 = | maxB_2 | maxG_2 | maxR_2 | maxR_2 | maxB_1 | maxG_1 | maxR_1 | maxR_1 |
 		; ahora tengo los datos alineados según las comparaciones que quiero hacer
 		pcmpgtw xmm1, xmm3			; xmm1 = | ? | (maxB_2 > maxG_2)? | (maxG_2 > maxR_2)? | (maxB_2 > maxR_2)? | ? | (maxB_1 > maxG_1)? | (maxG_1 > maxR_1)? | (maxB_1 > maxR_1)? |
@@ -125,11 +124,11 @@ colorizar_asm:
 		pxor xmm3, xmm8		
 		paddw xmm3, xmm7			; xmm3 = 0x0001 donde dio true y 0xFFFF donde dio false
 		; ahora resta extender a dword, convertirlo a float y multiplicarlo por alpha
-		pxor xmm4, xmm4
-		pcmpgtw xmm4, xmm3
+		pxor xmm7, xmm7
+		pcmpgtw xmm7, xmm3 			; obtengo la mascara para extender con signo
 		movdqu xmm1, xmm3			; xmm1 = 0x0001 donde dio true y 0xFFFF donde dio false
-		punpcklwd xmm1, xmm4		; xmm1 = 0x0001 donde dio true y 0xFFFF donde dio false (PX1)
-		punpckhwd xmm3, xmm4		; xmm3 = 0x0001 donde dio true y 0xFFFF donde dio false (PX2)
+		punpcklwd xmm1, xmm7		; xmm1 = 0x0001 donde dio true y 0xFFFF donde dio false (PX1)
+		punpckhwd xmm3, xmm7		; xmm3 = 0x0001 donde dio true y 0xFFFF donde dio false (PX2)
 		cvtdq2ps xmm1, xmm1
 		cvtdq2ps xmm3, xmm3
 		mulps xmm1, xmm0			; xmm1 = alpha donde dio true y -alpha donde dio false (PX1)
@@ -138,12 +137,10 @@ colorizar_asm:
 		movdqu xmm5, xmm10 			; xmm5 = | 1.0 | 1.0 | 1.0 | 1.0 |
 		addps xmm4, xmm1 			; xmm4 = | ? | phiB_1 | phiG_1 | phiR_1 |
 		addps xmm5, xmm3 			; xmm5 = | ? | phiB_2 | phiG_2 | phiR_2 |
-		; acomodo los resultados 
-		movdqu xmm1, xmm4			; xmm1 = | ? | phiB_1 | phiG_1 | phiR_1 |
-		movdqu xmm3, xmm5 			; xmm3 = | ? | phiB_2 | phiG_2 | phiR_2 |
+		; acomodo los resultados
 		; 102 = 11 00 01 10
-		shufps xmm4, xmm1, 102 		; xmm4 = | ? | phiR_1 | phiG_1 | phiB_1 |
-		shufps xmm5, xmm3, 102 		; xmm5 = | ? | phiR_2 | phiG_2 | phiB_2 |
+		shufps xmm4, xmm4, 102 		; xmm4 = | ? | phiR_1 | phiG_1 | phiB_1 |
+		shufps xmm5, xmm5, 102 		; xmm5 = | ? | phiR_2 | phiG_2 | phiB_2 |
 		; extiendo los pixeles originales a float
 		psrldq xmm2, 4				; xmm2 = | ? | ? | PX2 | PX1 |
 		movdqu xmm3, xmm2 			; xmm3 = | ? | ? | PX2 | PX1 |
@@ -156,21 +153,21 @@ colorizar_asm:
 		cvtdq2ps xmm3, xmm3 		; xmm3 = | A_2 | R_2 | G_2 | B_2 |
 		mulps xmm1, xmm4 			; xmm1 = | ? | R_1 * phiR_1 | G_1 * phiG_1 | B_1 * phiB_1 |
 		mulps xmm3, xmm5 			; xmm3 = | ? | R_2 * phiR_2 | G_2 * phiG_2 | B_2 * phiB_2 |
-		; hago la mascara con aquellos numeros mayores a 255
-		movdqu xmm4, [val255F]		; xmm4 = | 255.0 | 255.0 | 255.0 | 255.0 | 
-		movdqu xmm5, [val255F]		; xmm5 = | 255.0 | 255.0 | 255.0 | 255.0 |
-		movdqu xmm11, [val255F]		; xmm11= | 255.0 | 255.0 | 255.0 | 255.0 | 
-		movdqu xmm12, [val255F]		; xmm12= | 255.0 | 255.0 | 255.0 | 255.0 |
-		cmpps xmm11, xmm1, 1 		; compare less than -> tengo en true aquellos mayores a 255
-		cmpps xmm12, xmm3, 1
-		movdqu xmm6, xmm11
-		movdqu xmm7, xmm12
-		pxor xmm6, xmm8				; niego y tengo en true aquellos menores o iguales a 255
-		pxor xmm7, xmm8
-		andps xmm1, xmm6			; valores menores a 255 con phi*_1
-		andps xmm4, xmm11 			; 255.0 en las posiciones de los phi*_1 mayores a 255
-		andps xmm3, xmm7			; valores menores a 255 con phi*_2
-		andps xmm5, xmm12 			; 255.0 en las posiciones de los phi*_2 mayores a 255
+		; hago la mascara con aquellos numeros mayores y menores a 255
+		movdqu xmm4, xmm11			; xmm4 = | 255.0 | 255.0 | 255.0 | 255.0 | 
+		movdqu xmm5, xmm11			; xmm5 = | 255.0 | 255.0 | 255.0 | 255.0 |
+		movdqu xmm12, xmm11			; xmm11= | 255.0 | 255.0 | 255.0 | 255.0 | 
+		movdqu xmm13, xmm11			; xmm12= | 255.0 | 255.0 | 255.0 | 255.0 |
+		cmpps xmm12, xmm1, 6 		; compare less or equal -> tengo en true aquellos menores o iguales a 255.0
+		cmpps xmm13, xmm3, 6
+		movdqu xmm6, xmm12
+		movdqu xmm7, xmm13
+		xorps xmm6, xmm8			; niego y tengo en true aquellos mayores a 255
+		xorps xmm7, xmm8
+		andps xmm1, xmm12			; valores menores o iguales a 255 con phi*_1
+		andps xmm4, xmm6			; 255.0 en las posiciones de los phi*_1 mayores a 255
+		andps xmm3, xmm13			; valores menores a 255 con phi*_2
+		andps xmm5, xmm7 			; 255.0 en las posiciones de los phi*_2 mayores a 255
 		; obtengo el resultado final
 		addps xmm1, xmm4 			; xmm1 = | ? | min(R_1 * phiR_1, 255.0) | min(G_1 * phiG_1, 255.0) | min(B_1 * phiB_1, 255.0) |
 		addps xmm3, xmm5 			; xmm3 = | ? | min(R_2 * phiR_2, 255.0) | min(G_2 * phiG_2, 255.0) | min(B_2 * phiB_2, 255.0) |
@@ -182,10 +179,10 @@ colorizar_asm:
 		pxor xmm7, xmm7
 		packuswb xmm1, xmm7
 		; copio el valor alpha original del pixel
-		pextrb r13, xmm2, 3
-		pextrb r14, xmm2, 7
-		pinsrb xmm1, r13b, 3
-		pinsrb xmm1, r14b, 7
+		pextrb r13d, xmm2, 3
+		pextrb r14d, xmm2, 7
+		pinsrb xmm1, r13d, 3
+		pinsrb xmm1, r14d, 7
 		
 		movq [rsi], xmm1
 
