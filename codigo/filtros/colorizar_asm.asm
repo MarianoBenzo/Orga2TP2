@@ -63,6 +63,8 @@ colorizar_asm:
 	movdqu xmm8, [negar]		; xmm8 = | 0xFFFF | 0xFFFF | 0xFFFF | 0xFFFF | 0xFFFF | 0xFFFF | 0xFFFF | 0xFFFF |
 	movdqu xmm9, [val1W]		; xmm9 = | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 
 	movdqu xmm10, [val1F]		; xmm10= | 1.0 | 1.0 | 1.0 | 1.0 |
+	movdqu xmm11, [val255F]		; xmm11= | 255.0 | 255.0 | 255.0 | 255.0 | 
+	movdqu xmm12, [val255F]		; xmm12= | 255.0 | 255.0 | 255.0 | 255.0 | 
 	.ciclo:
 		cmp ecx, 0	 				; si no hay mas filas por recorrer, termine
 		je .fin
@@ -154,11 +156,38 @@ colorizar_asm:
 		cvtdq2ps xmm3, xmm3 		; xmm3 = | A_2 | R_2 | G_2 | B_2 |
 		mulps xmm1, xmm4 			; xmm1 = | ? | R_1 * phiR_1 | G_1 * phiG_1 | B_1 * phiB_1 |
 		mulps xmm3, xmm5 			; xmm3 = | ? | R_2 * phiR_2 | G_2 * phiG_2 | B_2 * phiB_2 |
-		movdqu xmm4, [val255F]		; xmm4 = | 255.0 | 255.0 | 255.0 | 255.0 | 
-		movdqu xmm5, [val255F]		; xmm5 = | 255.0 | 255.0 | 255.0 | 255.0 | 
 		; hago la mascara con aquellos numeros mayores a 255
-		cmpps xmm4, xmm1, 1 		; compare less than -> tengo en true aquellos mayores a 255
-		cmpps xmm5, xmm3, 1
+		movdqu xmm4, [val255F]		; xmm4 = | 255.0 | 255.0 | 255.0 | 255.0 | 
+		movdqu xmm5, [val255F]		; xmm5 = | 255.0 | 255.0 | 255.0 | 255.0 |
+		movdqu xmm11, [val255F]		; xmm11= | 255.0 | 255.0 | 255.0 | 255.0 | 
+		movdqu xmm12, [val255F]		; xmm12= | 255.0 | 255.0 | 255.0 | 255.0 |
+		cmpps xmm11, xmm1, 1 		; compare less than -> tengo en true aquellos mayores a 255
+		cmpps xmm12, xmm3, 1
+		movdqu xmm6, xmm11
+		movdqu xmm7, xmm12
+		xor xmm6, xmm8				; niego y tengo en true aquellos menores o iguales a 255
+		xor xmm7, xmm8
+		andps xmm1, xmm6			; valores menores a 255 con phi*_1
+		andps xmm4, xmm11 			; 255.0 en las posiciones de los phi*_1 mayores a 255
+		andps xmm3, xmm7			; valores menores a 255 con phi*_2
+		andps xmm5, xmm12 			; 255.0 en las posiciones de los phi*_2 mayores a 255
+		; obtengo el resultado final
+		addps xmm1, xmm4 			; xmm1 = | ? | min(R_1 * phiR_1, 255.0) | min(G_1 * phiG_1, 255.0) | min(B_1 * phiB_1, 255.0) |
+		addps xmm3, xmm5 			; xmm3 = | ? | min(R_2 * phiR_2, 255.0) | min(G_2 * phiG_2, 255.0) | min(B_2 * phiB_2, 255.0) |
+		; convierto a entero
+		cvtps2dq xmm1, xmm1
+		cvtps2dq xmm3, xmm3
+		; empaqueto a byte
+		packusdw xmm1, xmm3 		; xmm1 = | ? | min(R_2 * phiR_2, 255) | min(G_2 * phiG_2, 255) | min(B_2 * phiB_2, 255) | ? | min(R_1 * phiR_1, 255) | min(G_1 * phiG_1, 255) | min(B_1 * phiB_1, 255) |		
+		pxor xmm7, xmm7
+		packuswb xmm1, xmm7
+		; copio el valor alpha original del pixel
+		pextrb 13b, xmm2, 3
+		pextrb 14b, xmm2, 7
+		pinsrb xmm1, 13b, 3
+		pinsrb xmm1, 14b, 7
+		
+		movq [rsi], xmm1
 
 		cmp edx, 0
 		jne .seguir
