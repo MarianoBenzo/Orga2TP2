@@ -30,12 +30,12 @@ global colorizar_asm
 section .text
 
 colorizar_asm:
-	push rbp
+	push rbp		
 	mov rbp, rsp
-	push rbx
-	push r12
-	push r13
-	push r14
+	push rbx	
+	push r12		
+	push r13		
+	push r14		
 
 	xor r8, r8
 	mov r8d, edx
@@ -132,8 +132,8 @@ colorizar_asm:
 		punpckhwd xmm3, xmm4		; xmm3 = 0x0001 donde dio true y 0xFFFF donde dio false (PX2)
 		cvtdq2ps xmm1, xmm1
 		cvtdq2ps xmm3, xmm3
-		mulps xmm1, xmm8			; xmm1 = alpha donde dio true y -alpha donde dio false (PX1)
-		mulps xmm3, xmm8			; xmm3 = alpha donde dio true y -alpha donde dio false (PX2)
+		mulps xmm1, xmm0			; xmm1 = alpha donde dio true y -alpha donde dio false (PX1)
+		mulps xmm3, xmm0			; xmm3 = alpha donde dio true y -alpha donde dio false (PX2)
 		movdqu xmm4, xmm10			; xmm4 = | 1.0 | 1.0 | 1.0 | 1.0 |
 		movdqu xmm5, xmm10 			; xmm5 = | 1.0 | 1.0 | 1.0 | 1.0 |
 		addps xmm4, xmm1 			; xmm4 = | ? | phiB_1 | phiG_1 | phiR_1 |
@@ -165,8 +165,8 @@ colorizar_asm:
 		cmpps xmm12, xmm3, 1
 		movdqu xmm6, xmm11
 		movdqu xmm7, xmm12
-		xor xmm6, xmm8				; niego y tengo en true aquellos menores o iguales a 255
-		xor xmm7, xmm8
+		pxor xmm6, xmm8				; niego y tengo en true aquellos menores o iguales a 255
+		pxor xmm7, xmm8
 		andps xmm1, xmm6			; valores menores a 255 con phi*_1
 		andps xmm4, xmm11 			; 255.0 en las posiciones de los phi*_1 mayores a 255
 		andps xmm3, xmm7			; valores menores a 255 con phi*_2
@@ -182,10 +182,10 @@ colorizar_asm:
 		pxor xmm7, xmm7
 		packuswb xmm1, xmm7
 		; copio el valor alpha original del pixel
-		pextrb 13b, xmm2, 3
-		pextrb 14b, xmm2, 7
-		pinsrb xmm1, 13b, 3
-		pinsrb xmm1, 14b, 7
+		pextrb r13, xmm2, 3
+		pextrb r14, xmm2, 7
+		pinsrb xmm1, r13b, 3
+		pinsrb xmm1, r14b, 7
 		
 		movq [rsi], xmm1
 
@@ -203,5 +203,10 @@ colorizar_asm:
 			add r12, 8
 			add rsi, 8
 			jmp .ciclo
-
-	ret
+	.fin:
+		pop r14
+		pop r13
+		pop r12
+		pop rbx
+		pop rbp
+		ret
