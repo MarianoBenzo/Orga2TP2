@@ -138,9 +138,9 @@ colorizar_asm:
 		addps xmm4, xmm1 			; xmm4 = | ? | phiB_1 | phiG_1 | phiR_1 |
 		addps xmm5, xmm3 			; xmm5 = | ? | phiB_2 | phiG_2 | phiR_2 |
 		; acomodo los resultados
-		; 102 = 11 00 01 10
-		shufps xmm4, xmm4, 102 		; xmm4 = | ? | phiR_1 | phiG_1 | phiB_1 |
-		shufps xmm5, xmm5, 102 		; xmm5 = | ? | phiR_2 | phiG_2 | phiB_2 |
+		; 198 = 11 00 01 10
+		shufps xmm4, xmm4, 198 		; xmm4 = | ? | phiR_1 | phiG_1 | phiB_1 |
+		shufps xmm5, xmm5, 198 		; xmm5 = | ? | phiR_2 | phiG_2 | phiB_2 |
 		; extiendo los pixeles originales a float
 		psrldq xmm2, 4				; xmm2 = | ? | ? | PX2 | PX1 |
 		movdqu xmm3, xmm2 			; xmm3 = | ? | ? | PX2 | PX1 |
