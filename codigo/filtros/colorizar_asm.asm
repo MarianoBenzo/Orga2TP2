@@ -64,6 +64,8 @@ colorizar_asm:
 	movdqu xmm9, [val1W]		; xmm9 = | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 
 	movdqu xmm10, [val1F]		; xmm10= | 1.0 | 1.0 | 1.0 | 1.0 |
 	movdqu xmm11, [val255F]		; xmm11= | 255.0 | 255.0 | 255.0 | 255.0 | 
+	movdqu xmm12, [intercambiar]
+	movdqu xmm13, [acercar]
 	.ciclo:
 		cmp ecx, 0	 				; si no hay mas filas por recorrer, termine
 		je .fin
@@ -77,10 +79,10 @@ colorizar_asm:
 		pmaxub xmm1, xmm2			; xmm1 = | max(px3_a, px3_b) | max(px2_a, PX2_b) | max(px1_a, PX1_b) | max(px0_a, px0_b) |
 		pmaxub xmm1, xmm3			; xmm1 = | max(col_3) | max(col_2) | max(col_1) | max(col_0) |
 		movdqu xmm3, xmm1			; xmm3 = | max(col_3) | max(col_2) | max(col_1) | max(col_0) |
-		pshufb xmm3, [intercambiar]	; xmm3 = | max(col_3) | max(col_1) | max(col_2) | max(col_0) |
+		pshufb xmm3, xmm12			; xmm3 = | max(col_3) | max(col_1) | max(col_2) | max(col_0) |
 		pmaxub xmm3, xmm1			; xmm3 = | max(col_3) | max(max(col_2), max(col_1)) | max(max(col_2), max(col_1)) | max(col_0) |
 		psrldq xmm3, 4				; xmm3 = | 0 | max(col_3) | max(max(col_2), max(col_1)) | max(max(col_2), max(col_1)) |
-		pshufb xmm1, [acercar]		; xmm1 = | max(col_2) | max(col_1) | max(col_3) | max(col_0) |
+		pshufb xmm1, xmm13			; xmm1 = | max(col_2) | max(col_1) | max(col_3) | max(col_0) |
 		pmaxub xmm1, xmm3			; xmm1 = | ? | ? | max_PX2_b | max_PX1_b | 
 		; las comparaciones son con signo, entonces extiendo a word con ceros
 		pxor xmm7, xmm7				; xmm7 = | 0 | 0 | 0 | 0 |
@@ -156,17 +158,17 @@ colorizar_asm:
 		; hago la mascara con aquellos numeros mayores y menores a 255
 		movdqu xmm4, xmm11			; xmm4 = | 255.0 | 255.0 | 255.0 | 255.0 | 
 		movdqu xmm5, xmm11			; xmm5 = | 255.0 | 255.0 | 255.0 | 255.0 |
-		movdqu xmm12, xmm11			; xmm11= | 255.0 | 255.0 | 255.0 | 255.0 | 
-		movdqu xmm13, xmm11			; xmm12= | 255.0 | 255.0 | 255.0 | 255.0 |
-		cmpps xmm12, xmm1, 6 		; compare less or equal -> tengo en true aquellos menores o iguales a 255.0
-		cmpps xmm13, xmm3, 6
-		movdqu xmm6, xmm12
-		movdqu xmm7, xmm13
+		movdqu xmm14, xmm11			; xmm14= | 255.0 | 255.0 | 255.0 | 255.0 | 
+		movdqu xmm15, xmm11			; xmm15= | 255.0 | 255.0 | 255.0 | 255.0 |
+		cmpps xmm14, xmm1, 6 		; compare less or equal -> tengo en true aquellos menores o iguales a 255.0
+		cmpps xmm15, xmm3, 6
+		movdqu xmm6, xmm14
+		movdqu xmm7, xmm15
 		xorps xmm6, xmm8			; niego y tengo en true aquellos mayores a 255
 		xorps xmm7, xmm8
-		andps xmm1, xmm12			; valores menores o iguales a 255 con phi*_1
+		andps xmm1, xmm14			; valores menores o iguales a 255 con phi*_1
 		andps xmm4, xmm6			; 255.0 en las posiciones de los phi*_1 mayores a 255
-		andps xmm3, xmm13			; valores menores a 255 con phi*_2
+		andps xmm3, xmm15			; valores menores a 255 con phi*_2
 		andps xmm5, xmm7 			; 255.0 en las posiciones de los phi*_2 mayores a 255
 		; obtengo el resultado final
 		addps xmm1, xmm4 			; xmm1 = | ? | min(R_1 * phiR_1, 255.0) | min(G_1 * phiG_1, 255.0) | min(B_1 * phiB_1, 255.0) |
