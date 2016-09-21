@@ -60,24 +60,16 @@ pixelar_asm:
 		psrldq xmm1, 8				; xmm1 = |     0     | p4a + p2a |
 		paddusw xmm0, xmm1			; xmm0 = | ? | p3a + p1a + p4a + p2a |
 		punpcklwd xmm0, xmm7		; xmm0 = | p3a + p1a + p4a + p2a |
-		; convierto cada color del pixel de entero a float 
-		cvtdq2ps xmm0, xmm0
-		; divido por 4.0
-		divps xmm0, xmm6			; xmm0 = | (p3a + p1a + p4a + p2a) / 4 |
-		; convierto cada color del pixel de float a entero
-		cvtps2dq xmm0, xmm0
+		
+		psrld xmm0, 2				; xmm0 = | (p3a + p1a + p4a + p2a) / 4 |
 
 		paddusw xmm2, xmm3			; xmm2 = | p4b + p2b | p3b + p1b |
 		movdqu xmm3, xmm2			; xmm3 = | p4b + p2b | p3b + p1b |
 		psrldq xmm3, 8				; xmm3 = |     0     | p4b + p2b |
 		paddusw xmm2, xmm3			; xmm2 = | ? | p3b + p1b + p4b + p2b|
 		punpcklwd xmm2, xmm7		; xmm2 = | p3b + p1b + p4b + p2b |
-		; convierto cada color del pixel de entero a float 
-		cvtdq2ps xmm2, xmm2
-		; divido por 4.0
-		divps xmm2, xmm6			; xmm2 = | (p3b + p1b + p4b + p2b) / 4 |
-		; convierto cada color del pixel de float a entero
-		cvtps2dq xmm2, xmm2
+
+		psrld xmm2, 2				; xmm2 = | (p3b + p1b + p4b + p2b) / 4 |
 		
 		; empaqueto cada pixel a 4 bytes
 		packusdw xmm0, xmm0			; xmm0 = | (p3a + p1a + p4a + p2a) / 4 | (p3a + p1a + p4a + p2a) / 4 |
