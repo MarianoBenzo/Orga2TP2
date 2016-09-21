@@ -43,7 +43,7 @@ smalltiles_asm:
 	.ciclo:
 		movups xmm1, [rdi]								;xmm1 = |  p3  |  p2  |  p1  |  p0  |
 		movups xmm2, [rdi + 16]							;xmm2 = |  p7  |  p6  |  p5  |  p4  |
-		shufps xmm1, xmm2, 0xdd							;xmm1 = |  p6  |  p4  |  p2  |  p0  | 
+		shufps xmm1, xmm2, 0x88							;xmm1 = |  p6  |  p4  |  p2  |  p0  | 
 
 		movups [rsi], xmm1
 		movups [rsi + 8*rax], xmm1
