@@ -91,7 +91,7 @@ void correr_filtro_imagen(configuracion_t *config, aplicador_fn_t aplicador)
              config->carpeta_salida, basename(config->archivo_entrada),
              config->nombre_filtro,  C_ASM(config), config->extra_archivo_salida );
 			 
-	const char *medicion = "medicion."
+	const char *medicion = "medicion.";
 	char* fileName = (char*) malloc(1 + strlen(medicion) + strlen(config->nombre_filtro) + 1 + strlen(C_ASM(config)) + 4);
 	strcpy(fileName, medicion);
 	strcat(fileName, config->nombre_filtro);
@@ -101,7 +101,7 @@ void correr_filtro_imagen(configuracion_t *config, aplicador_fn_t aplicador)
 	
 	FILE *fp = fopen(fileName, "a");
 
-	fprintf(fp, "------------------------------------------------------");
+	fprintf(fp, "------------------------------------------------------\n");
 	
 	if (config->nombre)
 	{
@@ -125,11 +125,11 @@ void correr_filtro_imagen(configuracion_t *config, aplicador_fn_t aplicador)
 			sumatoria += (resultados[i] - media) * (resultados[i] - media);
 		varianza = sumatoria / (double) config->cant_iteraciones;
 		sd = sqrt(varianza);
-		fprintf(fp, "Archivo: %s", basename(config->archivo_entrada));
-		fprintf(fp, "Promedio: %f", media);
-		fprintf(fp, "Varianza: %f", varianza);
-		fprintf(fp, "Desviación estándar: %f", sd);
-		fprintf(fp, "# Iteraciones: %d", config->cant_iteraciones);
+		fprintf(fp, "Archivo: %s\n", basename(config->archivo_entrada));
+		fprintf(fp, "Promedio: %f\n", media);
+		fprintf(fp, "Varianza: %f\n", varianza);
+		fprintf(fp, "Desviación estándar: %f\n", sd);
+		fprintf(fp, "# Iteraciones: %d\n", config->cant_iteraciones);
 		fclose(fp);
 		imagenes_guardar(config);
 		imagenes_liberar(config);
