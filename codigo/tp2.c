@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "tp2.h"
 #include "helper/tiempo.h"
@@ -89,7 +90,19 @@ void correr_filtro_imagen(configuracion_t *config, aplicador_fn_t aplicador)
 	snprintf(config->archivo_salida, sizeof  (config->archivo_salida), "%s/%s.%s.%s%s.bmp",
              config->carpeta_salida, basename(config->archivo_entrada),
              config->nombre_filtro,  C_ASM(config), config->extra_archivo_salida );
+			 
+	const char *medicion = "medicion."
+	char* fileName = (char*) malloc(1 + strlen(medicion) + strlen(config->nombre_filtro) + 1 + strlen(C_ASM(config)) + 4);
+	strcpy(fileName, medicion);
+	strcat(fileName, config->nombre_filtro);
+	strcat(fileName, ".");
+	strcat(fileName, C_ASM(config));
+	strcat(fileName, ".txt");
+	
+	FILE *fp = fopen(fileName, "a");
 
+	fprintf(fp, "------------------------------------------------------");
+	
 	if (config->nombre)
 	{
 		printf("%s\n", basename(config->archivo_salida));
@@ -97,12 +110,26 @@ void correr_filtro_imagen(configuracion_t *config, aplicador_fn_t aplicador)
 	else
 	{
 		imagenes_abrir(config);
-		unsigned long long start, end;
-		MEDIR_TIEMPO_START(start)
+		unsigned long long res, start, end;
+		unsigned long long resultados[config->cant_iteraciones];
 		for (int i = 0; i < config->cant_iteraciones; i++) {
+				MEDIR_TIEMPO_START(start)
 				aplicador(config);
+				MEDIR_TIEMPO_STOP(end)
+				resultados[i] = end - start;
+				res += end - start;
 		}
-		MEDIR_TIEMPO_STOP(end)
+		double media, varianza, sd, sumatoria;
+		media = res / config->cant_iteraciones;
+		for (int i = 0; i < config->cant_iteraciones; i++)
+			sumatoria += (resultados[i] - media) * (resultados[i] - media);
+		varianza = sumatoria / (double) config->cant_iteraciones;
+		sd = sqrt(varianza);
+		fprintf(fp, "Archivo: %s", basename(config->archivo_entrada));
+		fprintf(fp, "Promedio: %f", media);
+		fprintf(fp, "Varianza: %f", varianza);
+		fprintf(fp, "Desviación estándar: %f", sd);
+		fprintf(fp, "# Iteraciones: %d", config->cant_iteraciones);
 		imagenes_guardar(config);
 		imagenes_liberar(config);
 		imprimir_tiempos_ejecucion(start, end, config->cant_iteraciones);
