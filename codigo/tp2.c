@@ -130,8 +130,11 @@ void correr_filtro_imagen(configuracion_t *config, aplicador_fn_t aplicador)
 		fprintf(fp, "Varianza: %f", varianza);
 		fprintf(fp, "Desviación estándar: %f", sd);
 		fprintf(fp, "# Iteraciones: %d", config->cant_iteraciones);
+		fclose(fp);
 		imagenes_guardar(config);
 		imagenes_liberar(config);
 		imprimir_tiempos_ejecucion(start, end, config->cant_iteraciones);
 	}
+	
+	free(fileName);
 }
