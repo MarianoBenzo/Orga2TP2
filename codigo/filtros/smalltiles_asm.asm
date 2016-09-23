@@ -1,4 +1,3 @@
-
 section .data
 DEFAULT REL
 
@@ -33,22 +32,23 @@ smalltiles_asm:
 	mov eax, r13d
 	mul r12d
 	mov rcx, rax
+	shl rcx, 1
 	shl rax, 2
 	mov r11, rax
 	add r11, r12
 	mov r15d, 0
 	mov r10, r12
-	shr r12d, 1
+	;shr r12d, 1
 
 	.ciclo:
-		movups xmm1, [rdi]								;xmm1 = |  p3  |  p2  |  p1  |  p0  |
-		movups xmm2, [rdi + 16]							;xmm2 = |  p7  |  p6  |  p5  |  p4  |
-		shufps xmm1, xmm2, 0x88							;xmm1 = |  p6  |  p4  |  p2  |  p0  | 
+		movups xmm1, [rdi]				; xmm1 = |  p3  |  p2  |  p1  |  p0  |
+		; 216 = 11 01 10 00 
+		pshufd xmm1, xmm1, 216			; xmm1 = |  p3  |  p1  |  p2  |  p0  | 
 
-		movups [rsi], xmm1
-		movups [rsi + 8*rax], xmm1
-		movups [rsi + 8*r10], xmm1
-		movups [rsi + 8*r11], xmm1
+		movq [rsi], xmm1
+		movq [rsi + 8*rax], xmm1
+		movq [rsi + 8*r10], xmm1
+		movq [rsi + 8*r11], xmm1
 		
 		inc r15d
 		cmp r15d, r12d
@@ -60,8 +60,8 @@ smalltiles_asm:
 		mov r15d, 0
 		jmp .cont
 		.seguir:
-		add rdi, 32
-		add rsi, 16
+			add rdi, 16
+			add rsi, 8
 	.cont:	
 		loop .ciclo
 	
