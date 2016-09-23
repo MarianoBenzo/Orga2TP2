@@ -1,0 +1,13 @@
+Metodología:
+-Solo variamos el tamaño de las imágenes y no sus componentes porque ningún filtro trabaja dependiendo de los valores de la imagen, excepto colorizar pero la cuenta que hace es independiente de los valores (es decir, con distintos valores no varía el rendimiento porque la comparación la hace igual, y la cuenta es muy similar (sumar o restar alpha)).
+-Medimos los ticks del CPU que consume cada filtro, la carga y guardado de imagen se hace antes y después de la medición.
+-Usar la consola para ver la frecuencia del CPU a la hora de correr los filtros.
+-Crear distintos tamaños de imagen usando los scripts: python 1_generar_imagenes.py (yo le puse 10 tamaños distintos, la primera mitad aumenta de a 64 pixeles y la segunda mitad aumenta de a 128 pixeles).
+-Correr tp2 usando de parámetro -t #iteraciones. #iteraciones determina cuántas veces se va a correr el filtro (para estar seguros de los datos, podemos correrlo 100 veces por ejemplo). En un archivo va guardando el promedio y la desviación estándar (en un futuro hay que remover los outliers de alguna manera). Podemos descartar las mediciones que den una desviación estándar muy grande (mayor al promedio) porque seguro tienen outliers.
+
+Posibles experimentos (recordar explicar por qué los hacemos y qué esperamos):
+-Smalltiles: en lugar de usar shuffle, extraer, shiftear e insertar. También se puede tener las cuentas del medio (rsi + 8 * ...) en varios registros, y solo sumar en cada iteracion (se supone que la multiplicación con enteros es muy costosa, entonces si hacemos las cuentas primero y en el ciclo solo sumamos, debería tardar menos).
+-Combinar: en lugar de dividir como float por 255.0, dividir por 256 shifteando. Mostrar cuánta presición se pierde.
+-Rotar: en lugar de usar shuffle, extraer, shiftear e insertar (muy parecido al de smalltiles pero no se me ocurre otro, convengamos que los dos lo único que hacen es reordenar datos).
+-Pixelar: ???
+-Colorizar: ???
