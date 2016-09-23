@@ -127,7 +127,6 @@ void correr_filtro_imagen(configuracion_t *config, aplicador_fn_t aplicador)
 		sd = sqrt(varianza);
 		fprintf(fp, "Archivo: %s\n", basename(config->archivo_entrada));
 		fprintf(fp, "Promedio: %f\n", media);
-		fprintf(fp, "Varianza: %f\n", varianza);
 		fprintf(fp, "Desviación estándar: %f\n", sd);
 		fprintf(fp, "# Iteraciones: %d\n", config->cant_iteraciones);
 		fclose(fp);
