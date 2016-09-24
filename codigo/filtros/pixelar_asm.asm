@@ -19,9 +19,6 @@
 
 extern pixelar_c
 
-section .rodata
-val4: dd 4.0, 4.0, 4.0, 4.0
-
 global pixelar_asm
 
 section .text
@@ -31,7 +28,6 @@ pixelar_asm:
 
 	push rbp
 	mov rbp, rsp
-	movdqu xmm6, [val4]		; xmm6 = | 4.0 | 4.0 | 4.0 | 4.0 |
 	xor r8, r8
 	mov r8d, edx
 	shl r8, 2				; tamaño de una fila
