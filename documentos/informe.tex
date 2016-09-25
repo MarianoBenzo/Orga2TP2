@@ -21,6 +21,7 @@
 \usepackage{graphicx}
 %\usepackage{makeidx}
 \usepackage{paralist} %itemize inline
+\usepackage{float}
 
 %\usepackage{float}
 %\usepackage{amsmath, amsthm, amssymb}
@@ -157,10 +158,46 @@ Ya que el filtro se ejecuta sobre el reflejo vertical de la imagen fuente, en le
 \\Se itera sobre la imagen columna por columna, y, una vez que se terminó de recorrer una fila, se decrementa el contador que contiene la cantidad de filas a recorrer. De esta manera, una vez que dicho contador llegó a cero, se terminó de recorrer la imagen. Como se opera de a 4 píxeles por vez, se divide la cantidad de columnas (que están en píxeles) por cuatro y los punteros avanzan de a 16 bytes. No se puede operar de a más píxeles por vez porque cada uno ocupa 32 bits, entonces solo se pueden almacenar cuatro de ellos por vez en los registros de SIMD.
 \\
 \\
-La implementación realizada en C itera sobre la imagen con dos ciclos anidados (avanzando por columnas), de a un pixel por vez. Las operaciones se realizan con una variable auxiliar de tipo \textit{float} y luego se castea la misma al tipo de dato de la estructura correspondiente al color del pixel (\textit{unsigned char}). Si bien las cuentas se realizan de manera muy similar a la implementación en lenguaje ensamblador, esta última recorre la imagen más rápido al procesar de a 4 píxeles por iteración, por lo que el rendimiento debería ser mayor.
-
-
-%\input{enunciado}
+La implementación realizada en C itera sobre la imagen con dos ciclos anidados (avanzando por columnas), de a un pixel por vez. Las operaciones se realizan con una variable auxiliar de tipo \textit{float} y luego se castea la misma al tipo de dato de la estructura correspondiente al color del pixel (\textit{unsigned char}). Si bien las cuentas se realizan de manera muy similar a la implementación en lenguaje ensamblador, esta última recorre la imagen más rápido al procesar de a 4 píxeles por iteración, por lo que el rendimiento debería ser mayor. 
+\\
+\begin{figure}[H]
+  \begin{center}
+	\includegraphics[scale=0.66]{imagenes/combinarC.png}
+	\caption{Comparación de los tiempos de ejecución de cada implementación}
+	\label{combinar_asmvsc}
+  \end{center}
+\end{figure}
+Como se puede observar en~\ref{combinar_asmvsc}, la cantidad de \textit{ticks} de reloj necesarios para ejecutar el mismo filtro en su implementación en C es considerablemente mayor a aquellos necesarios para ejecutar el filtro en su implementación en lenguaje ensamblador, como era de esperarse. La diferencia aumenta a medida que aumenta el tamaño de la imagen, donde se puede observar que la implementación en C tiene una complejidad lineal, mientras que la implementación en lenguaje ensamblador lo hace en un orden más bajo.
+\\Las mediciones se realizaron según lo descrito al principio del informe, con un parámetro \textit{alpha} de 128, en Ubuntu 16.04, con 1GB de memoria RAM DDR3 y un procesador Intel Core i3-2100 corriendo a una frecuencia de 3096MHz.
+\subsubsection{Experimentación}
+\textbf{Hipótesis}
+\newline
+Ya que el filtro consta de ejecutar una serie de operaciones, la mayor complejidad del mismo se encuentra en las cuentas que hay que realizar. Si bien la suma y resta de enteros no insume prácticamente ningún costo, dentro de las operaciones a realizar se encuentra una multiplicación con valores de punto flotante (\textit{alpha}) y la división por 255.0. Ya que \textit{alpha} representa un valor comprendido en [0.00;255.0], si se lo interpreta como un entero, el truncamiento no representa una pérdida de precisión muy importante, y el rendimiento obtenido debería compensar tal pérdida. Así mismo, se puede realizar algo similar con la división por 255.0. Si bien la división por enteros es costosa, es posible dividir el resultado parcial obtenido por 256 en lugar de 255. La operación no insume un mayor costo porque simplemente consta de \textit{shiftear} los bits, en lugar de realizar una división propiamente dicha. Además, ya que la operación se realizaría únicamente con enteros, no es necesario hacer \textit{casteos} intermedios entre punto flotante y enteros, los cuales son muy costosos.
+\newline
+\\
+\textbf{Resultados}
+\\Se realizó una medición de la cantidad de \textit{ticks} de reloj del CPU que conllevó ejecutar el filtro para los distintos tamaños de entrada. Únicamente se varió el tamaño de las imágenes y no sus componentes porque las cuentas a realizar son independientes de los valores cromáticos de la imagen, por lo que se descartó que puedan haber variaciones apreciables dependiendo de la imagen en sí. Por otro lado, el parámetro \textit{alpha} se fijó en 128.
+\\Las mediciones se realizaron según lo descrito al principio del informe, en Ubuntu 16.04, con 1GB de memoria RAM DDR3 y un procesador Intel Core i3-2100 corriendo a una frecuencia de 3096MHz.
+\\
+\begin{figure}[H]
+  \begin{center}
+	\includegraphics[scale=0.66]{imagenes/combinarExp.png}
+	\caption{Comparación de los tiempos de ejecución}
+	\label{combinar_exp}
+  \end{center}
+\end{figure}
+Los resultados condicen con lo esperado, donde los tiempos de ejecución del filtro operando únicamente con enteros son menores a aquellos utilizados para operar sin pérdida de precisión. La diferencia se hace más notable a medida que aumenta el tamaño de la imagen, pero no es tan notable como la diferencia entre la implementación en C y en lenguaje ensamblador, denotada en la figura~\ref{combinar_asmvsc}.
+\\Sin embargo, obteniendo la diferencia porcentual entre los distintos tiempos de ejecución, se obtiene que para datos de entrada chicos, la mejora ronda entre el 4 y el 8\%, mientras que para los tamaños de imagen más grande, la diferencia entre operar con enteros y operar con números en punto flotante de precisión simple llega al 40\%. Queda claro que el rendimiento mejora al operar con enteros, pero falta analizar cuánta precisión se pierde.
+\\Para analizar qué tanta diferencia hay entre un resultado y otro, utilizamos la herramienta \textit{bmpdiff}, generando imágenes que muestran la diferencia pixel a pixel para cada componente. Las imágenes se obtuvieron corriendo el filtro con el parámetro \textit{alpha} de valor 127.484, para realzar las diferencias por pérdida de precisión. El parámetro epsilon de la herramienta \textit{bmpdiff} se fijó en cero.
+\\
+\begin{figure}[H]
+  \begin{center}
+	\includegraphics[scale=0.66]{imagenes/diffExp.jpg}
+	\caption{Diferencia pixel a pixel para cada componente}
+	\label{combinar_diff}
+  \end{center}
+\end{figure}
+Como se puede observar, la mayor diferencia se obtiene en la componente verde, mientras que la roja (no incluida en la figura) no poseía diferencias. Si bien parecen ser varios los píxeles con distintos valores, la diferencia es prácticamente nula: al ejecutar \textit{bmpdiff} una vez más pero con el parámetro epsilon en 1 (es decir, permitiendo que haya un margen de error de $+/-$ uno para cada color) se obtuvo imágenes en negro para todas las componentes. En otras palabras, la pérdida de precisión es mínima, ya que solo difieren en uno cada componente de cada pixel, mientras que la mejora en rendimiento es notable, especialmente para imágenes de mayor tamaño. Por lo tanto, se concluye que es preferible utilizar la implementación con enteros si la precisión no es muy importante, especialmente teniendo en cuenta la mejora en tiempos de ejecución para imágenes grandes.
 
 
 \newpage
@@ -178,5 +215,3 @@ La implementación realizada en C itera sobre la imagen con dos ciclos anidados 
 \newpage
 
 \end{document}
-
-
