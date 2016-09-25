@@ -163,5 +163,20 @@ La implementación realizada en C itera sobre la imagen con dos ciclos anidados 
 %\input{enunciado}
 
 
+\newpage
+
+\subsection{Pixelar}
+\subsubsection{Implementación}
+Como el filtro necesita la información de dos filas para realizar el promedio, recorro tanto la imagen fuente como la imagen destino con dos punteros. Estos se mueven de forma paralela, es decir, en las mismas columnas pero en filas consecutivas. Al trabajar de esta forma y utilizando instrucciones SIMD podemos aplicar los cambios a ocho píxeles a la vez (cuatro por punteros).
+\\Para no perder precisión todas las operaciones que se necesitan para obtener los promedios se realizan en enteros. Una vez calculados (uno por grupo de 4 píxeles) se remplazan en la imagen destino los valores originales de los píxeles por el valor promedio correspondiente.
+\\Se itera sobre la imagen columna por columna, y, una vez que se terminaron de recorrer las dos filas paralelas, se decrementa el contador que contiene la mitad de la cantidad total de filas a recorrer. De esta manera, una vez que dicho contador llegó a cero, se terminó de recorrer la imagen. Como se opera de a 4 píxeles por puntero, se divide la cantidad de columnas (que están en píxeles) por cuatro y los punteros avanzan de a 16 bytes. A su vez, cuando se terminan de recorrer las filas, los punteros avanzan, la cantidad de columnas por cuatro bytes, saltándose cada puntero una fila. No se puede operar de a más píxeles por vez porque cada uno ocupa 32 bits, entonces solo se pueden almacenar cuatro de ellos por vez en los registros de SIMD.
+\\
+\\
+La implementación realizada en C itera sobre la imagen con dos ciclos anidados (avanzando por columnas), de a 4 píxeles por vez, avanzando de a dos columnas y dos filas a la vez. Simplemente se calcula el promedio en cuatro píxeles y se coloca este valor en la imagen destino en las posiciones de los píxeles procesados. Si bien las cuentas se realizan de manera muy similar a la implementación en lenguaje ensamblador, esta última recorre la imagen más rápido al procesar de a 8 píxeles por iteración, por lo que el rendimiento debería ser mayor.
+
+
+\newpage
+
 \end{document}
+
 
