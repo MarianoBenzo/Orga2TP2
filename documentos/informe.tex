@@ -210,7 +210,52 @@ Como el filtro necesita la información de dos filas para realizar el promedio, 
 \\
 \\
 La implementación realizada en C itera sobre la imagen con dos ciclos anidados (avanzando por columnas), de a 4 píxeles por vez, avanzando de a dos columnas y dos filas a la vez. Simplemente se calcula el promedio en cuatro píxeles y se coloca este valor en la imagen destino en las posiciones de los píxeles procesados. Si bien las cuentas se realizan de manera muy similar a la implementación en lenguaje ensamblador, esta última recorre la imagen más rápido al procesar de a 8 píxeles por iteración, por lo que el rendimiento debería ser mayor.
+\\
+\begin{figure}[H]
+  \begin{center}
+	\includegraphics[scale=0.66]{imagenes/pixelarC.png}
+	\caption{Comparación de los tiempos de ejecución de cada implementación}
+	\label{pixelar_asmvsc}
+  \end{center}
+\end{figure}
 
+Como se puede observar en~\ref{pixelar_asmvsc}, la cantidad de \textit{ticks} de reloj necesarios para ejecutar el mismo filtro en su implementación en C es considerablemente mayor a aquellos necesarios para ejecutar el filtro en su implementación en lenguaje ensamblador, como era de esperarse. La diferencia aumenta a medida que aumenta el tamaño de la imagen, donde se puede observar que la implementación en C tiene una complejidad lineal, mientras que la implementación en lenguaje ensamblador lo hace en un orden más bajo.
+\\
+Las mediciones se realizaron según lo descrito al principio del informe en Ubuntu 14.04, con 4GB de memoria RAM DDR2 y un procesador Intel Core 2 Quad Q9550 corriendo a una frecuencia de 2830MHz.
+
+\subsubsection{Experimentación}
+\textbf{Hipótesis}
+\newline
+Dentro de las series de operaciones que ejecuta el filtro existe una división entera que efectuamos con la instrucción \textit{psrld}. En esta experimentación queremos ver la diferencia, tanto en tiempo como en precisión, al utilizar una división de punto flotante. Entendemos que en este caso no tiene sentido utilizarla, porque los decimales que perdemos a utilizar la división entera los íbamos a descartar de todas formas, ya que la información en los píxeles esta en enteros. Aun asi nos interesa ver las diferencias entre ambos métodos. Suponemos que si bien la diferencia en rendimiento no seria muy notoria, ya que no es un gran cambio en el código, la mayor diferencia se vería en la perdida de precisión.
+\newline
+\\
+\textbf{Resultados}
+\\Se realizó una medición de la cantidad de \textit{ticks} de reloj del CPU que conllevó ejecutar el filtro para los distintos tamaños de entrada. Únicamente se varió el tamaño de las imágenes y no sus componentes porque las cuentas a realizar son independientes de los valores cromáticos de la imagen, por lo que se descartó que puedan haber variaciones apreciables dependiendo de la imagen en sí.
+\\Las mediciones se realizaron según lo descrito al principio del informe en Ubuntu 14.04, con 4GB de memoria RAM DDR2 y un procesador Intel Core 2 Quad Q9550 corriendo a una frecuencia de 2830MHz.
+\\
+
+\begin{figure}[H]
+  \begin{center}
+	\includegraphics[scale=0.66]{imagenes/pixelarExp.png}
+	\caption{Comparación de los tiempos de ejecución}
+	\label{pixelar_exp}
+  \end{center}
+\end{figure}
+
+Los resultados condicen con lo esperado, donde los tiempos de ejecución del filtro operando únicamente con enteros son menores, pero la diferencia no es tan notable como entre la implementación en C y en lenguaje ensamblador, denotada en la figura~\ref{pixelar_asmvsc}.
+\\Queda claro que el rendimiento mejora al operar con enteros, pero falta analizar cuánta precisión se pierde.
+\\Para analizar qué tanta diferencia hay entre un resultado y otro, utilizamos la herramienta \textit{bmpdiff}, generando imágenes que muestran la diferencia pixel a pixel para cada componente. El parámetro epsilon de la herramienta \textit{bmpdiff} se fijó en cero.
+\\
+
+\begin{figure}[H]
+  \begin{center}
+	\includegraphics[scale=0.40]{imagenes/pixelardiffExp.jpeg}
+	\caption{Diferencia pixel a pixel para cada componente}
+	\label{pixelar_diff}
+  \end{center}
+\end{figure}
+
+Como se puede observar, las diferencias en la imagen son uniformes, lo que confirma que el color no tuvo incidencia en las operaciones. Si bien parecen ser muchos los píxeles con distintos valores, la diferencia es prácticamente nula: al ejecutar \textit{bmpdiff} una vez más pero con el parámetro epsilon en 1 (es decir, permitiendo que haya un margen de error de $+/-$ uno para cada color) se obtuvo imágenes en negro para todas las componentes. En otras palabras, la pérdida de precisión es mínima, ya que solo difieren en uno cada componente de cada pixel. Sabiendo esto podemos concluir que, si la precisión no es algo que nos interese demasiado, realizar operaciones en float no tienen un costo excesivamente alto.
 
 \newpage
 
