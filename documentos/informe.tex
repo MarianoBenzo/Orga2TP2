@@ -151,6 +151,49 @@ Además, para las mediciones de rendimiento, se cuentan la cantidad de \textit{t
 \\El código utilizado para las mediciones se encuentra en el archivo \textit{tp2.c}, método \textit{void correr_filtro_imagen}.
 \newpage
 \section{Filtros} 
+\subsection{Rotar}
+\subsubsection{Implementación}
+Este filtro lo que hace es simplemente rotar los valores de los colores en los píxeles. Lo implementamos en muy pocas líneas en lenguaje ensamblador gracias a que utilizamos la instrucción \textit{shuffle} junto a una máscara (escrita como constante en memoria) que indica la nueva posición de cada valor en el pixel de la imagen destino. Por lo tanto, lo único que se realiza en cada iteración es la carga de la imagen de memoria en un registro, ejecutar la instrucción \textit{shuffle} y almacenar el registro en la posición de memoria del puntero a la imagen destino. 
+\\Como los valores en los píxeles no son alterados de ninguna forma, no hay pérdida de precisión alguna.\\
+
+Se itera sobre la imagen columna por columna, y, una vez que se terminó de recorrer una fila, se decrementa el contador que contiene la cantidad de filas a recorrer. De esta manera, una vez que dicho contador llegó a cero, se terminó de recorrer la imagen. Como se opera de a 4 píxeles por vez, se divide la cantidad de columnas (que están en píxeles) por cuatro y los punteros avanzan de a 16 bytes. No se puede operar de a más píxeles por vez porque cada uno ocupa 32 bits, entonces solo se pueden almacenar cuatro de ellos por vez en los registros de SIMD.\\
+
+
+La implementación realizada en C itera sobre la imagen con dos ciclos anidados (avanzando por columnas), de a un pixel por vez. Simplemente rota los valores de los píxeles en la imagen destino. Si bien las operaciones se realizan de manera muy similar a la implementación en lenguaje ensamblador, esta última recorre la imagen más rápido al procesar de a 4 píxeles por iteración, por lo que el rendimiento debería ser mayor.\\
+
+\begin{figure}[H]
+  \begin{center}
+	\includegraphics[scale=0.77]{imagenes/rotarC.png}
+	\caption{Comparación de los tiempos de ejecución de cada implementación}
+	\label{rotar_asmvsc}
+  \end{center}
+\end{figure}
+
+Como se puede observar en~\ref{rotar_asmvsc}, la cantidad de \textit{ticks} de reloj necesarios para ejecutar el mismo filtro en su implementación en C es considerablemente mayor a aquellos necesarios para ejecutar el filtro en su implementación en lenguaje ensamblador, como era de esperarse. La diferencia aumenta a medida que aumenta el tamaño de la imagen, donde se puede observar que la versión en C tiene una complejidad lineal, mientras que la implementación en lenguaje ensamblador lo hace en un orden menor.\\
+Las mediciones se realizaron según lo descrito al principio del informe en Ubuntu 14.04, con 4GB de memoria RAM DDR2 y un procesador Intel Core 2 Quad Q9550 corriendo a una frecuencia de 2830MHz.
+
+\subsubsection{Experimentación}
+\textbf{Hipótesis}
+\newline
+La instrucción principal de este filtro, como mencionamos anteriormente, es \textit{shuffle}. En esta experimentación queremos probar lo que ocurre si hacemos la rotación de valores de manera manual, simplemente desempaquetando y empaquetando los valores en las nuevas posiciones. Esto implica escribir más instrucciones y realizar un código más ilegible.
+\\Como la cantidad de instrucciones ha aumentado considerablemente, creemos que el tiempo de ejecución será mayor, a pesar de que sean (probablemente) menos costosas que la operación \textit{shuffle}. Aun así, debería ser menor a la implementación en C. 
+\newline
+
+\textbf{Resultados}
+\\Se realizó una medición de la cantidad de \textit{ticks} de reloj del CPU que conllevó ejecutar el filtro para los distintos tamaños de entrada. Únicamente se varió el tamaño de las imágenes y no sus componentes porque las cuentas a realizar son independientes de los valores cromáticos de la imagen, por lo que se descartó que puedan haber variaciones apreciables dependiendo de la imagen en sí.
+\\Las mediciones se realizaron según lo descrito al principio del informe en Ubuntu 14.04, con 4GB de memoria RAM DDR2 y un procesador Intel Core 2 Quad Q9550 corriendo a una frecuencia de 2830MHz.\\
+
+\begin{figure}[H]
+  \begin{center}
+	\includegraphics[scale=0.77]{imagenes/rotarExp.png}
+	\caption{Comparación de los tiempos de ejecución}
+	\label{rotar_exp}
+  \end{center}
+\end{figure}
+
+Los resultados coinciden con lo esperado, donde los tiempos de ejecución del filtro operando con la instrucción \textit{shuffle} son menores al resto, y a su vez, la versión en C sigue siendo la menos eficiente, ya que opera pixel por pixel e implica más accesos a memoria. También podemos notar que las diferencias entre las implementaciones se hacen más notorias a medida que aumenta la cantidad de datos a procesar. Concluimos que el empaquetado y desempaquetado de datos conlleva un costo mayor para reordenar datos a su equivalente utilizando la instrucción \textit{shuffle}.
+
+\newpage
 
 \subsection{Pixelar}
 \subsubsection{Implementación}
@@ -304,49 +347,5 @@ Como se puede observar en la figura~\ref{colorizar_exp}, efectivamente se redujo
   \end{center}
 \end{figure}
 En esta figura es fácilmente observable que la diferencia entre la implementación en lenguaje ensamblador y su análoga en C es mucho menor a comparación de los resultados obtenidos en la figura~\ref{colorizar_asmvsc}. Estos resultados condicen con lo planteado anteriormente, además de denotar una diferencia entre implementaciones menor a comparación de los demás filtros, ya que estos procesan de a cuatro pixeles mientras que este solo lo hace de a dos, comprobando lo dicho en la hipótesis. 
-
-\newpage
-
-\subsection{Rotar}
-\subsubsection{Implementación}
-Este filtro lo que hace es simplemente rotar los valores de los colores en los píxeles. Lo implementamos en muy pocas lineas de ASM gracias a que utilizamos la instrucción \textit{shuffle} junto una mascara que indica la nueva posición de cada valor en el píxel de la imagen destino. 
-\\Como los valores en los píxeles no son alterados de ninguna forma, no hay perdida de precisión alguna.\\
-
-Se itera sobre la imagen columna por columna, y, una vez que se terminó de recorrer una fila, se decrementa el contador que contiene la cantidad de filas a recorrer. De esta manera, una vez que dicho contador llegó a cero, se terminó de recorrer la imagen. Como se opera de a 4 píxeles por vez, se divide la cantidad de columnas (que están en píxeles) por cuatro y los punteros avanzan de a 16 bytes. No se puede operar de a más píxeles por vez porque cada uno ocupa 32 bits, entonces solo se pueden almacenar cuatro de ellos por vez en los registros de SIMD.\\
-
-
-La implementación realizada en C itera sobre la imagen con dos ciclos anidados (avanzando por columnas), de a un pixel por vez. Simplemente rota los valores de los píxeles en la imagen destino. Si bien las operaciones se realizan de manera muy similar a la implementación en lenguaje ensamblador, esta última recorre la imagen más rápido al procesar de a 4 píxeles por iteración, por lo que el rendimiento debería ser mayor.\\
-
-\begin{figure}[H]
-  \begin{center}
-	\includegraphics[scale=0.77]{imagenes/rotarC.png}
-	\caption{Comparación de los tiempos de ejecución de cada implementación}
-	\label{rotar_asmvsc}
-  \end{center}
-\end{figure}
-
-Como se puede observar en~\ref{rotar_asmvsc}, la cantidad de \textit{ticks} de reloj necesarios para ejecutar el mismo filtro en su implementación en C es considerablemente mayor a aquellos necesarios para ejecutar el filtro en su implementación en lenguaje ensamblador, como era de esperarse. La diferencia aumenta a medida que aumenta el tamaño de la imagen, donde se puede observar que la versión en C tiene una complejidad lineal, mientras que la implementación en lenguaje ensamblador lo hace en un orden más bajo.\\
-Las mediciones se realizaron según lo descrito al principio del informe en Ubuntu 14.04, con 4GB de memoria RAM DDR2 y un procesador Intel Core 2 Quad Q9550 corriendo a una frecuencia de 2830MHz.
-
-\subsubsection{Experimentación}
-\textbf{Hipótesis}
-\newline
-La instrucción principal de este filtro, como mencionamos anteriormente, es \textit{shuffle}. En esta experimentación queremos probar que pasa si hacemos la rotación de valores de manera manual, simplemente desempaquetando y empaquetando los valores en las nuevas posiciones. Obviamente este nuevo código es mucho más largo que el anterior y menos comprensible. 
-\\Como la cantidad de instrucciones a aumentado considerablemente creemos que el tiempo de ejecución sera mucho mayor, pero aun así, menor a la versión en C.
-\newline
-
-\textbf{Resultados}
-\\Se realizó una medición de la cantidad de \textit{ticks} de reloj del CPU que conllevó ejecutar el filtro para los distintos tamaños de entrada. Únicamente se varió el tamaño de las imágenes y no sus componentes porque las cuentas a realizar son independientes de los valores cromáticos de la imagen, por lo que se descartó que puedan haber variaciones apreciables dependiendo de la imagen en sí.
-\\Las mediciones se realizaron según lo descrito al principio del informe en Ubuntu 14.04, con 4GB de memoria RAM DDR2 y un procesador Intel Core 2 Quad Q9550 corriendo a una frecuencia de 2830MHz.\\
-
-\begin{figure}[H]
-  \begin{center}
-	\includegraphics[scale=0.77]{imagenes/rotarExp.png}
-	\caption{Comparación de los tiempos de ejecución}
-	\label{rotar_exp}
-  \end{center}
-\end{figure}
-
-Los resultados coinciden con lo esperado, donde los tiempos de ejecución del filtro operando con la instrucción \textit{shuffle} son menores al resto, y a su vez, la versión en C sigue siendo la menos eficiente, ya que opera píxel a píxel. También podemos notar que las diferencias entre las implementaciones se hacen más notorias a medida que aumenta el tamaño de la imagen.
 
 \end{document}
