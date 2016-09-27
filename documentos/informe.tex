@@ -68,7 +68,7 @@
 \fancyhf{}
 
 \fancyhead[LO]{Sección \rightmark} % \thesection\ 
-\fancyfoot[LO]{\small{Fermín Travi, Franco Martinez Quispe, Mariano Benzo}}
+\fancyfoot[LO]{\small{Fermín Travi, Mariano Benzo, Franco Martínez}}
 \fancyfoot[RO]{\thepage}
 \renewcommand{\headrulewidth}{0.5pt}
 \renewcommand{\footrulewidth}{0.5pt}
@@ -95,9 +95,8 @@
 \submateria{Segundo Cuatrimestre de 2016}
 \titulo{Trabajo Práctico II}
 \subtitulo{Operaciones con SIMD}
-\integrante{Benzo, Mariano}{198/14}{marianobenzo@gmail.com}
-\integrante{Martinez Quispe, Franco}{025/14}{francogm01@gmail.com}
-\integrante{Travi, Fermín}{234/13}{fermintravi@gmail.com}
+\integrante{Fermín Travi}{234/13}{fermintravi@gmail.com}
+\integrante{Mariano Benzo}{XXX/XX}{mail}
 
 \maketitle
 \newpage
@@ -167,38 +166,37 @@ El procesamiento en lenguaje ensamblador se realiza de a cuatro pixeles por iter
 Dentro de la implementación en C, se recorre la imagen fuente iterando una cantidad de veces equivalente a $\frac{filas}{2} * \frac{cols}{2}$, lo cual representa al tamaño de la imagen de cada cuadrante. De esta manera, el programa selecciona los pixeles de fila y columna par, los cuales son los que se guardarán en la imagen destino. Se itera píxel por píxel, donde en cada iteración se crean cuatro punteros a las direcciones de memoria correspondientes a cada cuadrante de la imagen destino.
 
 Ya que se procesa una mayor cantidad de pixeles por iteración en la implementación en lenguaje ensamblador, se espera que sus tiempos de ejecución sean menores a su análogo en C.
-
+\\
 \begin{figure}[H]
-	\begin{center}
-		\includegraphics[scale=0.77]{imagenes/smalltiles-CvsASM.png}
+  \begin{center}
+	\includegraphics[scale=0.66]{imagenes/smalltilesC.png}
 	\caption{Comparación de los tiempos de ejecución de cada implementación}
 	\label{smalltiles_asmvsc}
   \end{center}
 \end{figure}
 
-En la figura 1, se muestra las cantidad de ticks que se necesitaron para ejecutar el filtro en C y ASM.   Se hicieron mediciones para imagenes de distintos tamaños. Se puede observar que imagenes de 200 a 600 pixeles, el filtro en ASM se necesitaron menos ticks de reloj que en su version en C.
-Las mediciones se realizaron según lo descrito al principio del informe en Ubuntu 16.04, con 4GB de memoria RAM DDR3 y un procesador Intel Core i3-3240 corriendo a una frecuencia de 3.4GHz.
+Como se puede apreciar en~\ref{smalltiles_asmvsc}, hay una clara diferencia entre las distintas implementaciones. Como se suponía, la implementación en lenguaje ensamblador consume una cantidad de tiempo mucho menor para procesar las imágenes de gran tamaño que su análogo en C. Dado que la principal diferencia entre ambas implementaciones es la cantidad de pixeles que se procesan por iteración, suponemos que esta es la razón mayor de por qué se aprecia semejante diferencia.
 
 \subsubsection{Experimentacion}
 \textbf{Hipótesis}
 \newline
-La version ASM de este filtro depende que instrucciones usamos para organizar los pixeles que necesitamos tomar  y que necesitan estar en las replicas. En cada iteracion se utiliza la instrucción pshufdq para reorganizar los pixeles en xmm1 para su insercion en la imagen destino, pero la idea es probar si en vez de esa instrucción se puede utilizar instruciones de extract e insert para lograr el mismo y si es posible un mejor resultado.
+La implementación en lenguaje ensamblador consiste únicamente de ejecutar la instrucción \textit{shuffle} sobre los pixeles a procesar, utilizando un inmediato de 8 bits para reordenar los datos. Dado que el reordenamiento de los datos no es complicado, se lo puede reemplazar fácilmente utilizando \textit{shift} y las operaciones \textit{insert} y \textit{extract}, de manera tal de no perder información al realizar el \textit{shift}.
+
+Si bien es de esperar que la operación \textit{shift} consuma menos tiempo de ejecución que \textit{shuffle}, ya que simplemente es un corrimiento de bits, queremos analizar si en conjunto con las operaciones \textit{insert} y \textit{extract} es posible obtener un mejor rendimiento. Dado que tanto \textit{shuffle} como \textit{insert} y \textit{extract} utilizan bits de control para el reordenamiento de datos, suponemos que utilizan una lógica o unidades de hardware similares, y los tiempos de ejecución no deberían variar mucho.
 
 \textbf{Resultados}
+
+Para lograr analizar la diferencia entre las instrucciones, medimos los tiempos de ejecución de ambas implementaciones en lenguaje ensamblador (según lo descrito al principio del trabajo práctico) y las comparamos. 
 \\
-Se realizaron medicion de ticks de reloj para imagenes de distintos tamaños. Lo que se hace en este experimento remplazar una instruccion por 3, para si se presenta una mejora en la implementacion. 
-Las mediciones se realizaron según lo descrito al principio del informe en Ubuntu 14.04, con 4GB de memoria RAM DDR3 y un procesador Intel Core i3-3240 corriendo a una frecuencia de 3.4GHz.
-
-
 \begin{figure}[H]
   \begin{center}
-	\includegraphics[scale=0.77]{imagenes/smalltiles-Exp.png}
-	\caption{Comparación de los tiempos de ejecución}
+	\includegraphics[scale=0.66]{imagenes/smalltilesExp.png}
+	\caption{Comparación de los tiempos de ejecución del experimento}
 	\label{smalltiles_exp}
   \end{center}
 \end{figure}
 
-En la figura 2 se puede notar que reemplazar esa instrucción presento una mejora en el rendimiento del filtro. Para las imágenes de 200 a 500 pixeles los cantidad de  ticks de ambos filtros son bastante similares presentado muy poca diferencia. A partir de imagenes de 500 o mas pixeles se nota que la cantidad de ticks del filtro experimento necesita es menor a la cantidad que el filtro original necesita, convirtiendo al filtro de experimento en mas eficiente que el original.
+Tal como se muestra en el gráfico, los tiempos de ejecución son similares para datos de entrada de tamaño pequeño (a tal punto que se los podría considerar equivalentes), pero para imágenes más grandes, la diferencia se acentúa. Desconocemos por qué la diferencia entre instrucciones implica mayor costo para datos de entrada más grandes, pero podemos concluir que, en líneas generales, las operaciones de \textit{insert} y \textit{extract} implican un mayor costo que simplemente utilizar \textit{shuffle} para reordenar los datos, probablemente porque implica utilizar dos instrucciones que utilizan la misma unidad de hardware, a diferencia de una.
 
 \newpage
 \subsection{Rotar}
@@ -269,7 +267,7 @@ Las mediciones se realizaron según lo descrito al principio del informe en Ubun
 \subsubsection{Experimentación}
 \textbf{Hipótesis}
 \newline
-Dentro de las series de operaciones que ejecuta el filtro, existe una división entera que efectuamos con la instrucción \textit{psrld}. En esta experimentación queremos ver la diferencia, tanto en tiempo como en precisión, al utilizar una división de punto flotante. Entendemos que en este caso no tiene sentido utilizarla, porque los decimales que perdemos al utilizar la división entera los ibamos a descartar de todas formas, ya que la información en los pixeles se encuentra en enteros. Aún así, nos interesa ver las diferencias entre ambos métodos. Suponemos que la diferencia en rendimiento no debería variar mucho, ya que la división en punto flotante se realiza a través de una tabla \textit{hardcodeada}, y analizaremos la variación en la precisión (la cual debería ser mayor para la división en punto flotante).
+Dentro de las series de operaciones que ejecuta el filtro, existe una división entera que efectuamos con la instrucción \textit{psrld}. En esta experimentación queremos ver la diferencia, tanto en tiempo como en precisión, al utilizar una división de punto flotante. Entendemos que en este caso no tiene sentido utilizarla, porque los decimales que perdemos al utilizar la división entera los ibamos a descartar de todas formas, ya que la información en los pixeles se encuentra en enteros. Aún así, nos interesa ver las diferencias entre ambos métodos. Suponemos que la diferencia en rendimiento no debería variar mucho, ya que la división en punto flotante se realiza a través de una tabla \textit{hardcodeada}, y analizaremos la variación en la precisión (la cual debería ser peor para la división en punto flotante).
 \newline
 \\
 \textbf{Resultados}
@@ -298,7 +296,7 @@ Los resultados indican que, si bien existe una tabla \textit{hardcodeada} para l
   \end{center}
 \end{figure}
 
-Como se puede observar, las diferencias en la imagen son uniformes, lo que confirma que el color no tuvo incidencia en las operaciones. Si bien parecen ser muchos los pixeles con distintos valores, la diferencia es prácticamente nula: al ejecutar \textit{bmpdiff} una vez más pero con el parámetro epsilon en 1 (es decir, permitiendo que haya un margen de error de $+/-$ uno para cada color) se obtuvieron imágenes en negro para todas las componentes. En otras palabras, la diferencia de precisión es mínima, ya que solo difieren en uno cada componente de cada píxel. Sabiendo esto podemos concluir que en algunos casos puede ser preferible acarrear un mayor costo operando con punto flotante, en caso de requerir la mayor precisión posible.
+Como se puede observar, las diferencias en la imagen son uniformes, lo que confirma que el color no tuvo incidencia en las operaciones. Si bien parecen ser muchos los pixeles con distintos valores, la diferencia es prácticamente nula: al ejecutar \textit{bmpdiff} una vez más pero con el parámetro epsilon en 1 (es decir, permitiendo que haya un margen de error de $+/-$ uno para cada color) se obtuvieron imágenes en negro para todas las componentes. En otras palabras, la diferencia de precisión es mínima, ya que solo difieren en uno cada componente de cada píxel. Sabiendo esto podemos concluir que a pesar de ser operaciones aproximadas, las mismas solo difieren con el cálculo exacto por $+/-$ uno, lo que implica que es únicamente un tema de redondeo/truncamiento.
 
 \newpage
 \subsection{Combinar}
