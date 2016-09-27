@@ -1,0 +1,55 @@
+------------------------------------------------------
+Archivo: lena.192x192.bmp
+Promedio: 28586397.000000
+Desviación estándar: 23171156.324323
+# Iteraciones: 100
+------------------------------------------------------
+Archivo: lena.256x256.bmp
+Promedio: 28810985.000000
+Desviación estándar: 22015272.969619
+# Iteraciones: 100
+------------------------------------------------------
+Archivo: lena.320x320.bmp
+Promedio: 31957456.000000
+Desviación estándar: 22004093.115112
+# Iteraciones: 100
+------------------------------------------------------
+Archivo: lena.384x384.bmp
+Promedio: 36363272.000000
+Desviación estándar: 22272503.553878
+# Iteraciones: 100
+------------------------------------------------------
+Archivo: lena.448x448.bmp
+Promedio: 41054294.000000
+Desviación estándar: 22202465.589424
+# Iteraciones: 100
+------------------------------------------------------
+Archivo: lena.512x512.bmp
+Promedio: 47423478.000000
+Desviación estándar: 22792357.744574
+# Iteraciones: 100
+------------------------------------------------------
+Archivo: lena.640x640.bmp
+Promedio: 61090985.000000
+Desviación estándar: 23167958.592728
+# Iteraciones: 100
+------------------------------------------------------
+Archivo: lena.768x768.bmp
+Promedio: 77392685.000000
+Desviación estándar: 24441335.376422
+# Iteraciones: 100
+------------------------------------------------------
+Archivo: lena.896x896.bmp
+Promedio: 98069020.000000
+Desviación estándar: 25793084.406953
+# Iteraciones: 100
+------------------------------------------------------
+Archivo: lena.1024x1024.bmp
+Promedio: 119067070.000000
+Desviación estándar: 26352347.130507
+# Iteraciones: 100
+------------------------------------------------------
+Archivo: lena.bmp
+Promedio: 2170995234.000000
+Desviación estándar: 2147483622.000000
+# Iteraciones: 1
