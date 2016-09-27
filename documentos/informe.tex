@@ -183,6 +183,12 @@ Las mediciones se realizaron según lo descrito al principio del informe en Ubun
 \newline
 La version ASM de este filtro depende que instrucciones usamos para organizar los pixeles que necesitamos tomar  y que necesitan estar en las replicas. En cada iteracion se utiliza la instrucción pshufdq para reorganizar los pixeles en xmm1 para su insercion en la imagen destino, pero la idea es probar si en vez de esa instrucción se puede utilizar instruciones de extract e insert para lograr el mismo y si es posible un mejor resultado.
 
+\textbf{Resultados}
+\\
+Se realizaron medicion de ticks de reloj para imagenes de distintos tamaños. Lo que se hace en este experimento remplazar una instruccion por 3, para si se presenta una mejora en la implementacion. 
+Las mediciones se realizaron según lo descrito al principio del informe en Ubuntu 14.04, con 4GB de memoria RAM DDR3 y un procesador Intel Core i3-3240 corriendo a una frecuencia de 3.4GHz.
+
+
 \begin{figure}[H]
   \begin{center}
 	\includegraphics[scale=0.77]{imagenes/smalltiles-Exp.png}
