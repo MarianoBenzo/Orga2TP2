@@ -167,18 +167,28 @@ Dentro de la implementación en C, se recorre la imagen fuente iterando una cant
 
 Ya que se procesa una mayor cantidad de pixeles por iteración en la implementación en lenguaje ensamblador, se espera que sus tiempos de ejecución sean menores a su análogo en C.
 
-%\begin{figure}[H]
-%  \begin{center}
-%	\includegraphics[scale=0.77]{imagenes/smalltiles-CvsASM.png}
-%	\caption{Comparación de los tiempos de ejecución de cada implementación}
-%	\label{smalltiles_asmvsc}
-%  \end{center}
-%\end{figure}
+\begin{figure}[H]
+	\begin{center}
+		\includegraphics[scale=0.77]{imagenes/smalltiles-CvsASM.png}
+	\caption{Comparación de los tiempos de ejecución de cada implementación}
+	\label{smalltiles_asmvsc}
+  \end{center}
+\end{figure}
+
+
 
 \subsubsection{Experimentacion}
 \textbf{Hipótesis}
 \newline
 La version ASM de este filtro depende que instrucciones usamos para organizar los pixeles que necesitamos tomar  y que necesitan estar en las replicas. En cada iteracion se utiliza la instrucción pshufdq para reorganizar los pixeles en xmm1 para su insercion en la imagen destino, pero la idea es probar si en vez de esa instrucción se puede utilizar instruciones de extract e insert para lograr el mismo y si es posible un mejor resultado.
+
+\begin{figure}[H]
+  \begin{center}
+	\includegraphics[scale=0.77]{imagenes/smalltiles-Exp.png}
+	\caption{Comparación de los tiempos de ejecución}
+	\label{rotar_exp}
+  \end{center}
+\end{figure}
 
 \newpage
 \subsection{Rotar}
