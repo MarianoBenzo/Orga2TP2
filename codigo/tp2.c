@@ -137,16 +137,16 @@ void correr_filtro_imagen(configuracion_t *config, aplicador_fn_t aplicador)
 		unsigned long long mediciones[n];
 		res = 0;
 		for (int j = 0; j < config->cant_iteraciones; j++){
-			if !(resultados[j] >  x_90){
+			if (!(resultados[j] >  x_90)){
 				mediciones[j] = resultados[j];
 				res += mediciones[j];
 			}
 		}
 		media = res / n;
-		for (int i = 0; i < n; i++)
-			sumatoria += (mediciones[i] - media) * (mediciones[i] - media);
-		varianza = sumatoria / (double) n;
-		sd = sqrt(varianza);
+		// for (int i = 0; i < n; i++)
+		// 	sumatoria += (mediciones[i] - media) * (mediciones[i] - media);
+		// varianza = sumatoria / (double) n;
+		// sd = sqrt(varianza);
 		fprintf(fp, "Archivo: %s\n", basename(config->archivo_entrada));
 		fprintf(fp, "Promedio: %f\n", media);
 		fprintf(fp, "Desviación estándar: %f\n", sd);
