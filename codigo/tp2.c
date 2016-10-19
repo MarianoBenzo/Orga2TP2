@@ -119,11 +119,33 @@ void correr_filtro_imagen(configuracion_t *config, aplicador_fn_t aplicador)
 				resultados[i] = end - start;
 				res += end - start;
 		}
-		double media, varianza, sd, sumatoria;
+		const float z_90 = 1.282;
+		double media, varianza, sd, sumatoria, x_90;
 		media = res / config->cant_iteraciones;
 		for (int i = 0; i < config->cant_iteraciones; i++)
 			sumatoria += (resultados[i] - media) * (resultados[i] - media);
 		varianza = sumatoria / (double) config->cant_iteraciones;
+		sd = sqrt(varianza);
+		x_90 = media + z_90 * sd;
+		int n = 0;
+		// cuento la cant de elementos a remover
+		for (int j = 0; j < config->cant_iteraciones; j++) {
+			if (resultados[j] > x_90)
+				n++;
+		}
+		n = config->cant_iteraciones - n;
+		unsigned long long mediciones[n];
+		res = 0;
+		for (int j = 0; j < config->cant_iteraciones; j++){
+			if !(resultados[j] >  x_90){
+				mediciones[j] = resultados[j];
+				res += mediciones[j];
+			}
+		}
+		media = res / n;
+		for (int i = 0; i < n; i++)
+			sumatoria += (mediciones[i] - media) * (mediciones[i] - media);
+		varianza = sumatoria / (double) n;
 		sd = sqrt(varianza);
 		fprintf(fp, "Archivo: %s\n", basename(config->archivo_entrada));
 		fprintf(fp, "Promedio: %f\n", media);
