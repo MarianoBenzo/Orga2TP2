@@ -21,6 +21,13 @@ corridas = [
     {'filtro': 'smalltiles', 'tolerancia': 0, 'params': ''}
 ]
 
+corridas_nuestro = [
+    #{'filtro': 'colorizar', 'params': '0.5'},
+    #{'filtro': 'combinar', 'params': '128.0'},
+    {'filtro': 'pixelar', 'params': ''},
+    {'filtro': 'rotar', 'params': ''},
+    {'filtro': 'smalltiles', 'params': ''}
+]
 
 def make_dir(name):
     if not os.path.exists(name):
@@ -34,8 +41,12 @@ def assure_dirs():
 
 
 def archivos_tests():
-    return [f for f in listdir(TESTINDIR) if isfile(join(TESTINDIR, f))]
+    return [f for f in sorted(listdir(TESTINDIR)) if isfile(join(TESTINDIR, f))]
 
+def correr_filtro(filtro, implementacion, archivo_in, extra_params, corridas):
+    comando = TP2ALU + " " + filtro
+    argumentos = " -i " + implementacion + " -t " + corridas + " -o " + ALUMNOSDIR + "/ " + TESTINDIR + "/" + archivo_in + ' ' + extra_params
+    subprocess.call(comando + argumentos, shell=True)
 
 def correr_catedra(filtro, implementacion, archivo_in, extra_params):
     comando = TP2CAT + " " + filtro
