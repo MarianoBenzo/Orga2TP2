@@ -111,6 +111,9 @@ void correr_filtro_imagen(configuracion_t *config, aplicador_fn_t aplicador)
 	{
 		imagenes_abrir(config);
 		unsigned long long res, start, end;
+		res = 0;
+		start = 0;
+		end = 0;
 		unsigned long long resultados[config->cant_iteraciones];
 		for (int i = 0; i < config->cant_iteraciones; i++) {
 				MEDIR_TIEMPO_START(start)
@@ -120,24 +123,26 @@ void correr_filtro_imagen(configuracion_t *config, aplicador_fn_t aplicador)
 				res += end - start;
 		}
 		const float z_90 = 1.282;
-		double media, varianza, sd, sumatoria, x_90;
+		const float z_10 = -1.282;
+		double media, varianza, sd, sumatoria, x_90, x_10;
 		media = res / config->cant_iteraciones;
 		for (int i = 0; i < config->cant_iteraciones; i++)
 			sumatoria += (resultados[i] - media) * (resultados[i] - media);
 		varianza = sumatoria / (double) config->cant_iteraciones;
 		sd = sqrt(varianza);
 		x_90 = media + z_90 * sd;
-		int n = 0;
+		x_10 = media + z_10 * sd;
+		int h = 0;
 		// cuento la cant de elementos a remover
 		for (int j = 0; j < config->cant_iteraciones; j++) {
-			if (resultados[j] > x_90)
-				n++;
+			if (resultados[j] > x_90 || resultados[j] < x_10)
+				h++;
 		}
-		n = config->cant_iteraciones - n;
+		int n = config->cant_iteraciones - h;
 		unsigned long long mediciones[n];
 		res = 0;
 		for (int j = 0; j < config->cant_iteraciones; j++){
-			if (!(resultados[j] >  x_90)){
+			if (!(resultados[j] >  x_90) || !(resultados[j] < x_10)){
 				mediciones[j] = resultados[j];
 				res += mediciones[j];
 			}
@@ -151,6 +156,7 @@ void correr_filtro_imagen(configuracion_t *config, aplicador_fn_t aplicador)
 		fprintf(fp, "Promedio: %f\n", media);
 		fprintf(fp, "Desviación estándar: %f\n", sd);
 		fprintf(fp, "# Iteraciones: %d\n", config->cant_iteraciones);
+		fprintf(fp, "# Elementos removidos: %d\n", h);
 		fclose(fp);
 		imagenes_guardar(config);
 		imagenes_liberar(config);
