@@ -154,7 +154,7 @@ void correr_filtro_imagen(configuracion_t *config, aplicador_fn_t aplicador)
 		// sd = sqrt(varianza);
 		fprintf(fp, "Archivo: %s\n", basename(config->archivo_entrada));
 		fprintf(fp, "Promedio: %f\n", media);
-		fprintf(fp, "Desviación estándar: %f\n", sd);
+		fprintf(fp, "Desviacion estandar: %f\n", sd);
 		fprintf(fp, "# Iteraciones: %d\n", config->cant_iteraciones);
 		fprintf(fp, "# Elementos removidos: %d\n", h);
 		fclose(fp);
