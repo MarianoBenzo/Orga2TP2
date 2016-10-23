@@ -1,0 +1,13 @@
+Para la comparacion entre C y ASM:
+1. En /codigo/tests/data/imagenes_a_testear tiene que haber una única imagen (lena.768x768.bmp, por ejemplo)
+
+2. Modificar la línea 2 del Makefile que está en /codigo/ agregando al final O1:
+	CFLAGS64 = -ggdb -Wall -Wno-unused-parameter -Wextra -std=c99 -pedantic -m64 -O1
+3. Compilar
+4. En la carpeta /codigo/tests, ejecutar mediciones_filtros.py
+5. Renombrar los archivos de las mediciones de C ("medicion.filtro.C.txt") a "medicion.filtro.C_01.txt"
+
+6. Repetir 2 a 5 con "O2", "O3" y "O0" (en ese orden). Al correr con O0, saltear 5.
+7. En la carpeta /codigo/tests, ejecutar "python armar_histograma.py ASM 00 01 02 03"
+8. Se generó un archivo .dat para cada filtro.
+9. Copiar los archivos .dat al directorio del gnuplot y correr el script "gnuplot_histograma.txt" con cada .dat.
