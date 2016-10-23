@@ -22,8 +22,8 @@ corridas = [
 ]
 
 corridas_nuestro = [
-    #{'filtro': 'colorizar', 'params': '0.5'},
-    #{'filtro': 'combinar', 'params': '128.0'},
+    {'filtro': 'colorizar', 'params': '0.5'},
+    {'filtro': 'combinar', 'params': '128.0'},
     {'filtro': 'pixelar', 'params': ''},
     {'filtro': 'rotar', 'params': ''},
     {'filtro': 'smalltiles', 'params': ''}
@@ -39,14 +39,53 @@ def assure_dirs():
     make_dir(CATEDRADIR)
     make_dir(ALUMNOSDIR)
 
+def importar_datos(filtro, implementacion):
+    if (implementacion != "00" and implementacion[0] == "0"):
+        implementacion = "C_" + implementacion
+    if implementacion == "00":
+        implementacion = "C"
+    origen = "medicion." + filtro + "." + implementacion + ".txt"
+    salida = filtro + ".dat"
+    f = open(origen, "r")
+    o = open(salida, "r+")
+
+    medicion = f.read()
+    lineas = medicion.splitlines()
+    promedio = lineas[2]
+    varianza = lineas[3]
+    promedio = promedio.lstrip("Promedio: ")
+    varianza = varianza.lstrip("Desviacion estandar: ")
+
+    masVarianza = float(promedio) + float(varianza)
+    menosVarianza = float(promedio) - float(varianza)
+
+    output = o.read()
+    o_lines = output.splitlines()
+    
+    lineaMenosVarianza = o_lines[1]
+    lineaPromedio = o_lines[2]
+    lineaMasVarianza = o_lines[3]
+
+    lineaMenosVarianza = lineaMenosVarianza.strip("\n") + str(menosVarianza) + " \n"
+    lineaPromedio = lineaPromedio.strip("\n") + promedio + " \n"
+    lineaMasVarianza = lineaMasVarianza.strip("\n") + str(masVarianza) + " \n"
+
+    o.seek(0)
+    o.write(o_lines[0] + "\n" + lineaMenosVarianza + lineaPromedio + lineaMasVarianza)
+
+    f.close()
+    o.close()
+
 
 def archivos_tests():
     return [f for f in sorted(listdir(TESTINDIR)) if isfile(join(TESTINDIR, f))]
+
 
 def correr_filtro(filtro, implementacion, archivo_in, extra_params, corridas):
     comando = TP2ALU + " " + filtro
     argumentos = " -i " + implementacion + " -t " + corridas + " -o " + ALUMNOSDIR + "/ " + TESTINDIR + "/" + archivo_in + ' ' + extra_params
     subprocess.call(comando + argumentos, shell=True)
+
 
 def correr_catedra(filtro, implementacion, archivo_in, extra_params):
     comando = TP2CAT + " " + filtro
