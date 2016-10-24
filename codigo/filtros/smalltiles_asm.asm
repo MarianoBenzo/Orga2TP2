@@ -20,14 +20,14 @@ smalltiles_asm:
 	mov rbx, rsi
 	mov r14, rdi
 	
-	shr rdx, 1
-	shr rcx, 1
+	shr edx, 1
+	shr ecx, 1
 	
 	mov r12d, edx 						; r12 = cols
 	mov r13d, ecx						; r13 = filas
 	
-	shr r12, 1
-	shr r13, 1
+	shr r12d, 1
+	shr r13d, 1
 	
 	mov eax, r13d
 	mul r12d
