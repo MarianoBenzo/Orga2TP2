@@ -24,9 +24,9 @@ corridas = [
 corridas_nuestro = [
     #{'filtro': 'colorizar', 'params': '0.5'},
     #{'filtro': 'combinar', 'params': '128.0'},
-    #{'filtro': 'pixelar', 'params': ''},
+    {'filtro': 'pixelar', 'params': ''},
     #{'filtro': 'rotar', 'params': ''},
-    {'filtro': 'smalltiles', 'params': ''}
+    #{'filtro': 'smalltiles', 'params': ''}
 ]
 
 def make_dir(name):
@@ -39,7 +39,7 @@ def assure_dirs():
     make_dir(CATEDRADIR)
     make_dir(ALUMNOSDIR)
 
-def importar_porcentajes(filtro, implementacion)
+def importar_porcentajes(filtro, implementacion):
     origen = "medicion." + filtro + "." + implementacion + ".txt"
     control = "medicion." + filtro + ".control.txt"
     salida = filtro + "_exp.dat"    
@@ -65,7 +65,7 @@ def importar_porcentajes(filtro, implementacion)
     masVarianzaC = float(promedioC) + float(varianzaC)
     menosVarianzaC = float(promedioC) - float(varianzaC)
 
-    pctPromedio = (promedio * 100) / promedioC
+    pctPromedio = (float(promedio) * 100) / float(promedioC)
     pctMasVarianza = (masVarianza * 100) / masVarianzaC
     pctMenosVarianza = (menosVarianza * 100) / menosVarianzaC
 
