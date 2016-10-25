@@ -1,0 +1,44 @@
+# set terminal png transparent nocrop enhanced size 450,320 font "arial,8" 
+# set output 'filtro_vs_c.png'
+set border 3 front lt black linewidth 1.000 dashtype solid
+set boxwidth 0.75 absolute
+set style fill   solid 1.00 border lt -1
+set grid nopolar
+set grid noxtics nomxtics ytics nomytics noztics nomztics \
+ nox2tics nomx2tics noy2tics nomy2tics nocbtics nomcbtics
+set grid layerdefault   lt 0 linewidth 0.500,  lt 0 linewidth 0.500
+set key outside right top vertical Left reverse noenhanced autotitle columnhead box lt black linewidth 1.000 dashtype solid
+set style histogram columnstacked title textcolor lt -1
+set datafile missing '-'
+set style data histograms
+set xtics border in scale 1,0.5 nomirror norotate  autojustify
+set xtics  norangelimit
+set xtics   ()
+set ytics border in scale 0,0 mirror norotate  autojustify
+set ztics border in scale 0,0 nomirror norotate  autojustify
+set cbtics border in scale 0,0 mirror norotate  autojustify
+set rtics axis in scale 0,0 nomirror norotate  autojustify
+set paxis 1 tics border in scale 0,0 nomirror norotate  autojustify
+set paxis 1 tics autofreq  rangelimit
+set paxis 2 tics border in scale 0,0 nomirror norotate  autojustify
+set paxis 2 tics autofreq  rangelimit
+set paxis 3 tics border in scale 0,0 nomirror norotate  autojustify
+set paxis 3 tics autofreq  rangelimit
+set paxis 4 tics border in scale 0,0 nomirror norotate  autojustify
+set paxis 4 tics autofreq  rangelimit
+set paxis 5 tics border in scale 0,0 nomirror norotate  autojustify
+set paxis 5 tics autofreq  rangelimit
+set paxis 6 tics border in scale 0,0 nomirror norotate  autojustify
+set paxis 6 tics autofreq  rangelimit
+set paxis 7 tics border in scale 0,0 nomirror norotate  autojustify
+set paxis 7 tics autofreq  rangelimit
+set title "Comparación del experimento" 
+set xlabel "Implementación" 
+set ylabel "Porcentaje de mejora respecto al control (%)" 
+set autoscale y
+x = 0.0
+i = 23
+## Last datafile plotted: "filtro_exp.dat"
+# cada uno es una columna (contando desde 2): ASM exp
+# la ultima columna tiene que tener la propiedad :key(1) para que salga la leyenda
+plot 'filtro_exp.dat' using 2 ti col, '' using 3:key(1) ti col
