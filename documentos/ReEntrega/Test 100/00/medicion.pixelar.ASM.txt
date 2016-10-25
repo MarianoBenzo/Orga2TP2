@@ -1,0 +1,6 @@
+------------------------------------------------------
+Archivo: lena.768x768.bmp
+Promedio: 1589329.000000
+Desviacion estandar: 39993.604565
+# Iteraciones: 100
+# Elementos removidos: 5
