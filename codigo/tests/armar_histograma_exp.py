@@ -21,9 +21,9 @@ for corrida in corridas_nuestro:
 		if implementacion != "armar_histograma_exp.py":
 			f.write(implementacion + " ")
 	f.write("\n")
-	f.write("-Varianza\t\n")
-	f.write("Promedio\t\n")
 	f.write("+Varianza\t\n")
+	f.write("Promedio\t\n")
+	f.write("-Varianza\t\n")
 	f.close()
 	for implementacion in sys.argv:
 		if implementacion != "armar_histograma_exp.py": 			#Ignoro el nombre del script en los argumentos
