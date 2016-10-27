@@ -23,10 +23,10 @@ corridas = [
 
 corridas_nuestro = [
     {'filtro': 'colorizar', 'params': '0.5'},
-    {'filtro': 'combinar', 'params': '128.0'},
-    {'filtro': 'pixelar', 'params': ''},
-    {'filtro': 'rotar', 'params': ''},
-    {'filtro': 'smalltiles', 'params': ''}
+    #{'filtro': 'combinar', 'params': '128.0'},
+    #{'filtro': 'pixelar', 'params': ''},
+    #{'filtro': 'rotar', 'params': ''},
+    #{'filtro': 'smalltiles', 'params': ''}
 ]
 
 def make_dir(name):
@@ -45,41 +45,51 @@ def importar_porcentajes(filtro, implementacion):
     salida = filtro + "_exp.dat"    
     c = open(control, "r")
     f = open(origen, "r")
-    o = open(salida, "r+")
+    o = open(salida, "a+")
 
     medicion = f.read()
     lineas = medicion.splitlines()
     promedio = lineas[2]
     varianza = lineas[3]
-    promedio = promedio.lstrip("Promedio: ")
-    varianza = varianza.lstrip("Desviacion estandar: ")
-    masVarianza = float(promedio) + float(varianza)
+    promedio = float(promedio.lstrip("Promedio: "))
+    varianza = float(varianza.lstrip("Desviacion estandar: "))
+    menosVarianza = promedio - varianza
+    masVarianza = promedio + varianza
 
     medicionC = c.read()
     lineasC = medicionC.splitlines()
     promedioC = lineasC[2]
     varianzaC = lineasC[3]
-    promedioC = promedioC.lstrip("Promedio: ")
-    varianzaC = varianzaC.lstrip("Desviacion estandar: ")
-	masVarianzaC = float(promedioC) + float(varianzaC)
+    promedioC = float(promedioC.lstrip("Promedio: "))
+    varianzaC = float(varianzaC.lstrip("Desviacion estandar: "))
+    menosVarianzaC = promedioC - varianzaC
+    masVarianzaC = promedioC + varianzaC
 
     pctMasVarianza = (masVarianza * 100) / masVarianzaC
-    pctVarianza = ((float) varianza * 100) / (float) varianzaC
-    pctMejora = 100 - pctMasVarianza
+    pctPromedio = (promedio * 100) / promedioC
+    pctMenosVarianza = (menosVarianza * 100) / menosVarianzaC
 
-    output = o.read()
-    o_lines = output.splitlines()
-    
-	lineaMasVarianza = o_lines[1]
-	lineaPromedio = o_lines[2]
-    lineaMenosVarianza = o_lines[3]
+    pctMejoraMasV = 100 - pctMasVarianza
+    pctMejoraP = 100 - pctPromedio
+    pctMejoraMenosV = 100 - pctMenosVarianza
 
-    lineaMasVarianza = lineaMasVarianza.strip("\n") + str(pctMejora) + " \n"
-    lineaPromedio = lineaPromedio.strip("\n") + pctVarianza + " \n"
-    lineaMenosVarianza = lineaMenosVarianza.strip("\n") + pctVarianza + " \n"
+    o.write(implementacion + "\t" + str(pctMejoraMenosV) + " " + str(pctMejoraP) + " " + str(pctMejoraMasV) + "\n")
+    # output = o.read()
+    # o_lines = output.splitlines()
 
-    o.seek(0)
-    o.write(o_lines[0] + "\n" + lineaMasVarianza + lineaPromedio + lineaMenosVarianza)  
+    # lineaMasVarianza = o_lines[1]
+    # lineaPromedio = o_lines[2]
+    # lineaMenosVarianza = o_lines[3]
+
+    # lineaMasVarianza = lineaMasVarianza.strip("\n") + str(pctMejoraMV) + " \n"
+    # lineaPromedio = lineaPromedio.strip("\n") + str(pctVarianza) + " \n"
+    # lineaMenosVarianza = lineaMenosVarianza.strip("\n") + str(pctVarianza) + " \n"
+
+    # o.seek(0)
+    # o.write(o_lines[0] + "\n" + lineaMasVarianza + lineaPromedio + lineaMenosVarianza)  
+    c.close()
+    f.close()
+    o.close()
 
 def importar_datos(filtro, implementacion):
     if (implementacion != "00" and implementacion[0] == "0"):
