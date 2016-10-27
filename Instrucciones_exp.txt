@@ -1,6 +1,6 @@
 Para los experimentos:
-1. Tener a mano las mediciones del filtro en la implementaci贸n en Assembler ("medicion.filtro.ASM.txt") y la del control ("medicion.filtro.control.txt") (la de control va a ser C_03 o C_02, renombrar el archivo).
-2. Compilar con el c贸digo de experimentaci贸n de cada filtro y correr "mediciones_filtros.py" (cuidado de que no se pise "medicion.filtro.ASM.txt").
-3. Renombrar cada medici贸n a "medicion.filtro.exp.txt" seg煤n corresponda (en Colorizar, hay que renombrar los datos de C, porque el c贸digo del experimento es en C).
-4. Con los tres archivos de mediciones en la carpeta /tests/, correr "python armar_histograma_exp.py ASM Exp".
+1. Tener a mano las mediciones del filtro en la implementaci髇 en Assembler ("medicion.filtro.ASM.txt") y la del control ("medicion.filtro.control.txt") (la de control va a ser C_03 o C_02, renombrar el archivo).
+2. Compilar con el c骴igo de experimentaci髇 de cada filtro y correr "mediciones_filtros.py" (cuidado de que no se pise "medicion.filtro.ASM.txt").
+3. Renombrar cada medici髇 a "medicion.filtro.exp.txt" seg鷑 corresponda (en Colorizar, hay que renombrar los datos de C, porque el c骴igo del experimento es en C).
+4. Con los tres archivos de mediciones en la carpeta /tests/, correr "python armar_histograma_exp.py ASM exp".
 5. Ejecutar el script "gnuplot_histograma_exp.txt" en gnuplot para cada "filtro_exp.dat" resultante.
