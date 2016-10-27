@@ -12,6 +12,8 @@ set xtics   ()
 set title "Comparacion contra la implementacion de control"
 set xlabel "Implementacion" 
 set ylabel "Porcentaje de mejora (%)"
+# si el .dat tiene datos negativos (Colorizar_exp.dat), cambiar por
+#set autoscale y
 set yrange [ 0.00000 : 100.00000 ] noreverse nowriteback
 x = 0.0
 i = 22
