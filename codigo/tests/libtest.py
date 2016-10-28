@@ -22,11 +22,11 @@ corridas = [
 ]
 
 corridas_nuestro = [
-    {'filtro': 'colorizar', 'params': '0.5'},
+    #{'filtro': 'colorizar', 'params': '0.5'},
     #{'filtro': 'combinar', 'params': '128.0'},
     #{'filtro': 'pixelar', 'params': ''},
     #{'filtro': 'rotar', 'params': ''},
-    #{'filtro': 'smalltiles', 'params': ''}
+    {'filtro': 'smalltiles', 'params': ''}
 ]
 
 def make_dir(name):
@@ -74,55 +74,32 @@ def importar_porcentajes(filtro, implementacion):
     pctMejoraMenosV = 100 - pctMenosVarianza
 
     o.write(implementacion + "\t" + str(pctMejoraMenosV) + " " + str(pctMejoraP) + " " + str(pctMejoraMasV) + "\n")
-    # output = o.read()
-    # o_lines = output.splitlines()
 
-    # lineaMasVarianza = o_lines[1]
-    # lineaPromedio = o_lines[2]
-    # lineaMenosVarianza = o_lines[3]
-
-    # lineaMasVarianza = lineaMasVarianza.strip("\n") + str(pctMejoraMV) + " \n"
-    # lineaPromedio = lineaPromedio.strip("\n") + str(pctVarianza) + " \n"
-    # lineaMenosVarianza = lineaMenosVarianza.strip("\n") + str(pctVarianza) + " \n"
-
-    # o.seek(0)
-    # o.write(o_lines[0] + "\n" + lineaMasVarianza + lineaPromedio + lineaMenosVarianza)  
     c.close()
     f.close()
     o.close()
 
 def importar_datos(filtro, implementacion):
-    if (implementacion != "00" and implementacion[0] == "0"):
-        implementacion = "C_" + implementacion
     if implementacion == "00":
-        implementacion = "C"
-    origen = "medicion." + filtro + "." + implementacion + ".txt"
+        origen = "medicion." + filtro + ".C.txt"
+    elif implementacion[0] == "0":
+    	origen = "medicion." + filtro + ".C_" + implementacion + ".txt"
+    else:
+   		origen = "medicion." + filtro + "." + implementacion + ".txt"
     salida = filtro + ".dat"
     f = open(origen, "r")
-    o = open(salida, "r+")
+    o = open(salida, "a+")
 
     medicion = f.read()
     lineas = medicion.splitlines()
     promedio = lineas[2]
     varianza = lineas[3]
-    promedio = promedio.lstrip("Promedio: ")
-    varianza = varianza.lstrip("Desviacion estandar: ")
-
-    menosVarianza = float(promedio) - float(varianza)
-
-    output = o.read()
-    o_lines = output.splitlines()
+    promedio = float(promedio.lstrip("Promedio: "))
+    varianza = float(varianza.lstrip("Desviacion estandar: "))
+    masVarianza = promedio + varianza
+    menosVarianza = promedio - varianza
     
-    lineaMenosVarianza = o_lines[1]
-    lineaPromedio = o_lines[2]
-    lineaMasVarianza = o_lines[3]
-
-    lineaMenosVarianza = lineaMenosVarianza.strip("\n") + str(menosVarianza) + " \n"
-    lineaPromedio = lineaPromedio.strip("\n") + varianza + " \n"
-    lineaMasVarianza = lineaMasVarianza.strip("\n") + varianza + " \n"
-
-    o.seek(0)
-    o.write(o_lines[0] + "\n" + lineaMenosVarianza + lineaPromedio + lineaMasVarianza)
+    o.write(implementacion + "\t" + str(menosVarianza) + " " + str(promedio) + " " + str(masVarianza) + "\n")
 
     f.close()
     o.close()

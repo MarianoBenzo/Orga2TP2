@@ -17,14 +17,11 @@ for corrida in corridas_nuestro:
 	if isfile(corrida['filtro'] + ".dat"): 
 		remove(corrida['filtro'] + ".dat")
 	f = open(corrida['filtro'] + ".dat", "w+")
-	f.write("Implementacion\t")
-	for implementacion in sys.argv:
-		if implementacion != "armar_histograma.py":
-			f.write(implementacion + " ")
+	f.write("Datos\t")
+	f.write("-Varianza\t")
+	f.write("Promedio\t")
+	f.write("+Varianza\t")
 	f.write("\n")
-	f.write("-Varianza\t\n")
-	f.write("Promedio\t\n")
-	f.write("+Varianza\t\n")
 	f.close()
 	for implementacion in sys.argv:
 		if implementacion != "armar_histograma.py": 			#Ignoro el nombre del script en los argumentos
