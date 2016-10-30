@@ -319,9 +319,9 @@ La implementación realizada en C itera sobre la imagen con dos ciclos anidados 
   \end{center}
 \end{figure}
 
-Como se puede observar en~\ref{combinar_asmvsc}, la cantidad de \textit{ticks} de reloj necesarios para ejecutar el mismo filtro en su implementación en C es considerablemente mayor a aquellos necesarios para ejecutar el filtro en su implementación en lenguaje ensamblador, como era de esperarse. La diferencia aumenta a medida que aumenta el tamaño de la imagen, donde se puede observar que la implementación en C tiene una complejidad lineal, mientras que la implementación en lenguaje ensamblador lo hace en un orden más bajo.
+Como se puede observar en la figura~\ref{combinar_asmvsc}, la cantidad de \textit{ticks} de reloj necesarios para ejecutar el filtro en su implementación en C es mayor a su análoga en lenguaje ensamblador, incluso utilizando las optimizaciones del compilador. La diferencia es más notoria que en otros filtros, ya que porcentualmente, la medición de la implementación en lenguaje ensamblador es un 83\% menor que la medición de la implementación con la mayor cantidad de optimizaciones del compilador (\textit{O3}). La implementación con el flag \textit{O2} resultó ser un poco menor a aquella con el flag \textit{O3}, por lo que se deduce que las optimizaciones extra que conlleva \textit{O3} frente a \textit{O2} no propician ninguna mejora (y resulta en un rendimiento ligeramente menor) en este filtro. Por otra parte, la diferencia entre estos últimos y \textit{O1} es casi del 20\%, mientras que frente a implementación sin optimización resultaron ser un 52\% mejor.
 
-Las mediciones se realizaron según lo descrito al principio del informe, con un parámetro \textit{alpha} de 128, en Ubuntu 16.04, con 1GB de memoria RAM DDR3 y un procesador Intel Core i3-2100 corriendo a una frecuencia de 3096MHz.
+Las mediciones se realizaron según lo descrito al principio del informe, con un parámetro \textit{alpha} de 128.
 \subsubsection{Experimentación}
 \textbf{Hipótesis}
 \newline
@@ -331,9 +331,7 @@ Ya que el filtro consta de ejecutar una serie de operaciones, la mayor complejid
 \\
 \textbf{Resultados}
 
-Se realizó una medición de la cantidad de \textit{ticks} de reloj del CPU que conllevó ejecutar el filtro para los distintos tamaños de entrada. Únicamente se varió el tamaño de las imágenes y no sus componentes porque las cuentas a realizar son independientes de los valores cromáticos de la imagen, por lo que se descartó que puedan haber variaciones apreciables dependiendo de la imagen en sí. Por otro lado, el parámetro \textit{alpha} se fijó en 128.
-
-Las mediciones se realizaron según lo descrito al principio del informe, en Ubuntu 16.04, con 1GB de memoria RAM DDR3 y un procesador Intel Core i3-2100 corriendo a una frecuencia de 3096MHz.
+Se realizó una medición de la cantidad de \textit{ticks} de reloj del CPU que conllevó ejecutar el filtro según lo descrito al principio del informe. 
 \\
 \begin{figure}[H]
   \begin{center}
@@ -343,9 +341,9 @@ Las mediciones se realizaron según lo descrito al principio del informe, en Ubu
   \end{center}
 \end{figure}
 
-Los resultados condicen con lo esperado, donde los tiempos de ejecución del filtro operando únicamente con enteros son menores a aquellos utilizados para operar sin pérdida de precisión. La diferencia se hace más notable a medida que aumenta el tamaño de la imagen, pero no es tan notable como la diferencia entre la implementación en C y en lenguaje ensamblador, denotada en la figura~\ref{combinar_asmvsc}.
+Los resultados condicen con lo esperado, donde los tiempos de ejecución del filtro operando únicamente con enteros son menores a aquellos utilizados para operar con punto flotante.
 
-Sin embargo, obteniendo la diferencia porcentual entre los distintos tiempos de ejecución, se obtiene que para datos de entrada chicos, la mejora ronda entre el 4 y el 8\%, mientras que para los tamaños de imagen más grande, la diferencia entre operar con enteros y operar con números en punto flotante de precisión simple llega al 40\%. Queda claro que el rendimiento mejora al operar con enteros, pero falta analizar cuánta precisión se pierde.
+Como se puede observar en la figura~\ref{combinar_exp}, la mejora frente a la implementación de control es del 85\%, un 4\% mejor que la implementación común en lenguaje ensamblador. Queda claro que el rendimiento mejora al operar con enteros, dado a la complejidad de las operaciones en punto flotante, las cuales se hacen más notorias frente a mayor cantidad de datos por procesar, pero falta analizar en cuánto difiere la precisión.
 \bigskip
 
 Para analizar qué tanta diferencia hay entre un resultado y otro, utilizamos la herramienta \textit{bmpdiff}, generando imágenes que muestran la diferencia píxel a píxel para cada componente. Las imágenes se obtuvieron corriendo el filtro con el parámetro \textit{alpha} de valor 127.484, para realzar las diferencias por pérdida de precisión. El parámetro epsilon de la herramienta \textit{bmpdiff} se fijó en cero.
@@ -358,7 +356,7 @@ Para analizar qué tanta diferencia hay entre un resultado y otro, utilizamos la
   \end{center}
 \end{figure}
 
-Como se puede observar, la mayor diferencia se obtiene en la componente verde, mientras que la roja (no incluida en la figura) no poseía diferencias. Si bien parecen ser varios los pixeles con distintos valores, la diferencia es prácticamente nula: al ejecutar \textit{bmpdiff} una vez más pero con el parámetro epsilon en 1 (es decir, permitiendo que haya un margen de error de $+/-$ uno para cada color) se obtuvo imágenes en negro para todas las componentes. En otras palabras, la pérdida de precisión es mínima, ya que solo difieren en uno cada componente de cada píxel, mientras que la mejora en rendimiento es notable, especialmente para imágenes de mayor tamaño. Por lo tanto, se concluye que es preferible utilizar la implementación con enteros si la precisión no es muy importante, especialmente teniendo en cuenta la mejora en tiempos de ejecución para imágenes grandes.
+Como se puede observar, la mayor diferencia se obtiene en la componente verde, mientras que no hubieron diferencias en la componente alpha. Si bien parecen ser varios los pixeles con distintos valores, la diferencia es prácticamente nula: al ejecutar \textit{bmpdiff} una vez más pero con el parámetro epsilon en 1 (es decir, permitiendo que haya un margen de error de $+/-$ uno para cada color) se obtuvo imágenes en negro para todas las componentes. En otras palabras, la diferencia en la precisión es mínima, ya que solo difieren en uno cada componente de cada píxel, mientras que la mejora en rendimiento es notable, especialmente para imágenes de mayor tamaño. Por lo tanto, se concluye que es preferible utilizar la implementación con enteros ya que la única diferencia se encuentra en el redondeo de los valores.
 
 \newpage
 
