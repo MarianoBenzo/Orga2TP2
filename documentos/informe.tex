@@ -219,19 +219,17 @@ La implementación realizada en C itera sobre la imagen con dos ciclos anidados 
   \end{center}
 \end{figure}
 
-Como se puede observar en~\ref{rotar_asmvsc}, la cantidad de \textit{ticks} de reloj necesarios para ejecutar el mismo filtro en su implementación en C es considerablemente mayor a aquellos necesarios para ejecutar el filtro en su implementación en lenguaje ensamblador, como era de esperarse. La diferencia aumenta a medida que aumenta el tamaño de la imagen, donde se puede observar que la versión en C tiene una complejidad lineal, mientras que la implementación en lenguaje ensamblador lo hace en un orden menor.\\
-Las mediciones se realizaron según lo descrito al principio del informe en Ubuntu 14.04, con 4GB de memoria RAM DDR2 y un procesador Intel Core 2 Quad Q9550 corriendo a una frecuencia de 2830MHz.
+Como se puede observar en la figura~\ref{rotar_asmvsc}, la cantidad de \textit{ticks} de reloj necesarios para ejecutar el mismo filtro en su implementación en C sin optimizar es considerablemente mayor a aquellos necesarios para ejecutar el filtro en su implementación en lenguaje ensamblador, siendo la medición de esta última un 90\% menor. Por otro lado, la implementación en C optimizada mediante el flag \textit{O1} resultó ser un 63\% mejor que aquella sin optimizar y, casualmente, frente a la optimización mediante \textit{O2} resultó ser un 13\% mejor. Sin embargo, al aplicarle todas las optimizaciones posibles del compilador, los tiempos de ejecución se empiezan a asemejar a aquellos de la implementación en lenguaje ensamblador, resultando ser un 70\% mejor que su análoga con el flag \textit{O1}.
 
 \subsubsection{Experimentación}
 \textbf{Hipótesis}
 \newline
-La instrucción principal de este filtro, como mencionamos anteriormente, es \textit{shuffle}. En esta experimentación queremos probar lo que ocurre si hacemos la rotación de valores de manera manual, simplemente desempaquetando y empaquetando los valores en las nuevas posiciones. Esto implica escribir más instrucciones y realizar un código más ilegible.
+La instrucción principal de este filtro, como mencionamos anteriormente, es \textit{shuffle}. En esta experimentación queremos probar lo que ocurre si hacemos la rotación de valores (es decir, lo que se realiza con la instrucción \textit{shuffle}) de manera manual, simplemente desempaquetando y empaquetando los valores en las nuevas posiciones. Esto implica escribir más instrucciones y realizar un código más ilegible.
 \\Como la cantidad de instrucciones ha aumentado considerablemente, creemos que el tiempo de ejecución será mayor, a pesar de que sean (probablemente) menos costosas que la operación \textit{shuffle}. Aun así, debería ser menor a la implementación en C. 
 \newline
 
 \textbf{Resultados}
-\\Se realizó una medición de la cantidad de \textit{ticks} de reloj del CPU que conllevó ejecutar el filtro para los distintos tamaños de entrada. Únicamente se varió el tamaño de las imágenes y no sus componentes porque las cuentas a realizar son independientes de los valores cromáticos de la imagen, por lo que se descartó que puedan haber variaciones apreciables dependiendo de la imagen en sí.
-\\Las mediciones se realizaron según lo descrito al principio del informe en Ubuntu 14.04, con 4GB de memoria RAM DDR2 y un procesador Intel Core 2 Quad Q9550 corriendo a una frecuencia de 2830MHz.\\
+\\Se realizó una medición de la cantidad de \textit{ticks} de reloj del CPU que conllevó ejecutar el filtro según lo descrito al principio del informe y se lo comparó frente a su versión de control (la implementación en C compilada con el flag \textit{O3}).
 
 \begin{figure}[H]
   \begin{center}
@@ -332,7 +330,7 @@ Ya que el filtro consta de ejecutar una serie de operaciones, la mayor complejid
 \\
 \textbf{Resultados}
 
-Se realizó una medición de la cantidad de \textit{ticks} de reloj del CPU que conllevó ejecutar el filtro según lo descrito al principio del informe. 
+Se realizó una medición de la cantidad de \textit{ticks} de reloj del CPU que conllevó ejecutar el filtro según lo descrito al principio del informe, comparándolo con la implementación en C de control (aquella compilada con el flag \textit{O2}, según lo visto anteriormente).
 \\
 \begin{figure}[H]
   \begin{center}
@@ -385,7 +383,7 @@ Solo se varió el tamaño de las imágenes a probar porque, si bien los máximos
   \end{center}
 \end{figure}
 
-Como se puede observar en la figura~\ref{colorizar_asmvsc}, la diferencia entre la implementación en lenguaje ensamblador y aquella en C es muy considerable, donde la implementación en C consume muchos más \textit{ticks} de reloj a medida que aumenta el tamaño de los datos de entrada y su contraparte lo hace en un orden bastante menor. Suponemos que la diferencia es más notable que en otros filtros (teniendo en cuenta que se procesa únicamente de a dos pixeles por iteración en lugar de a cuatro, como los demás) por la cantidad de accesos a memoria que requiere la implementación en C para buscar el máximo.
+Como se puede observar en la figura~\ref{colorizar_asmvsc}, la diferencia entre la implementación en lenguaje ensamblador y aquella compilada en C sin optimizaciones es muy grande, siendo la medición promedio de la primera un 90\% menor. Sin embargo, una vez aplicadas algunas optimizaciones, la diferencia se achica abruptamente (la diferencia con la implementación compilada con el flag \textit{O1} es casi del 80\%). Suponemos que la diferencia entre la implementación sin optimizar y la optimizada es más notable que en otros filtros por la cantidad de condiciones y líneas de código que se encuentran presentes en la implementación en C, por lo que da lugar a una mayor posibilidad de optimización.
 \\
 \subsubsection{Experimentación}
 \textbf{Hipótesis}
@@ -398,7 +396,7 @@ Los accesos a memoria deberían conformar una parte considerable del costo insum
 \\
 \textbf{Resultados}
 
-Para analizar lo dicho, se ejecutó ambas implementaciones en C de la manera descrita al principio del trabajo práctico y se comparó ambos resultados.
+Para analizar lo dicho, se ejecutó ambas implementaciones en C de la manera descrita al principio del trabajo práctico y se comparó ambos resultados, utilizando el flag \textit{O3} para la compilación.
 \\
 \begin{figure}[H]
   \begin{center}
@@ -408,17 +406,6 @@ Para analizar lo dicho, se ejecutó ambas implementaciones en C de la manera des
   \end{center}
 \end{figure}
 
-Como se puede observar en la figura~\ref{colorizar_exp}, efectivamente se redujo el tiempo de ejecución, acentuándose la diferencia para imágenes de mayor tamaño. Calculando la diferencia porcentual entre ambas implementaciones, para imágenes de menor tamaño se obtuvo una mejora promedio del 15\% y para datos de entrada considerablemente más grandes, se mejoró en un 45\% aproximadamente.
-Comparando el rendimiento con la implementación en lenguaje ensamblador, se obtuvo lo siguiente:
-\\
-\begin{figure}[H]
-  \begin{center}
-	\includegraphics[scale=0.6]{imagenes/colorizarExpASM.png}
-	\caption{Comparación entre las distintas implementaciones}
-	\label{colorizar_expASM}
-  \end{center}
-\end{figure}
-
-En esta figura es fácilmente observable que la diferencia entre la implementación en lenguaje ensamblador y su análoga en C es mucho menor a comparación de los resultados obtenidos en la figura~\ref{colorizar_asmvsc}. Estos resultados condicen con lo planteado anteriormente, además de denotar una diferencia entre implementaciones menor a comparación de los demás filtros, ya que estos procesan de a cuatro pixeles mientras que este solo lo hace de a dos, comprobando lo dicho en la hipótesis. 
+Como se puede observar en la figura~\ref{colorizar_exp}, los tiempos de ejecución de la implementación del experimento resultaron ser peores que aquellos de la implementación de control, resultando ser aproximadamente un 4\% más lento. Sin embargo, frente a la implementación sin optimizaciones, el experimento dio resultados positivos. Por lo tanto, podemos concluir que dentro de las optimizaciones del compilador, ya se incluye una mecánica similar a la propuesta en el experimento, almacenando los resultados parciales. Suponemos que la implementación del experimento resultó ser incluso peor porque posee más líneas de código.
 
 \end{document}
