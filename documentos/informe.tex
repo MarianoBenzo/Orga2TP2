@@ -147,11 +147,11 @@ typedef struct bgra_t {
 \end{verbatim}
 \end{codesnippet}
 
-Además, para las mediciones de rendimiento, se cuentan la cantidad de \textit{ticks} del procesador que conllevó ejecutar una determinada implementación de los filtros. Se eligió como dato de entrada una imagen de tama\ño 768x768 (589.284) pixels, luego de analizar los resultados sobre distintos tamaños de entrada (y concluir que porcentualmente la diferencia era despreciable). Así mismo, se los decidió ejecutar cien veces al observar que ejecutándolos más veces no se obtenían resultados distintos. No se analizan distintas imágenes porque sus componentes no interfieren en los cálculos realizados por los filtros; es decir, el rendimiento de los filtros es independiente de las componentes cromáticas de las imágenes (el único que trabaja en base a los valores de los colores es \textit{Colorizar}, el por qué no lo afectan se encuentra en la explicación de su implementación).
+Además, para las mediciones de rendimiento, se cuentan la cantidad de \textit{ticks} del procesador que conllevó ejecutar una determinada implementación de los filtros. Se eligió como dato de entrada una imagen de tamaño 768x768 (589.284) pixels, luego de analizar los resultados sobre distintos tamaños de entrada (y concluir que porcentualmente la diferencia era despreciable). Así mismo, se decidió ejecutarlos cien veces al observar que ejecutándolos más cantidad de veces no se obtenían resultados distintos. No se analizan distintas imágenes porque sus componentes no interfieren en los cálculos realizados por los filtros; es decir, el rendimiento de los filtros es independiente de las componentes cromáticas de las imágenes (el único que trabaja en base a los valores de los colores es \textit{Colorizar}, el por qué no lo afectan se encuentra en la explicación de su implementación).
 
-Una vez obtenidas las mediciones, se obtiene un promedio del mismo. La carga y guardado de imágenes se ejecuta anterior y posteriormente a la corrida del filtro, por lo que no afecta a las mediciones. Para evitar la presencia de \textit{outliers}, se calcula la desviación estándar de las mediciones y a partir de él, el 90-percentil. Luego, removimos todos los valores que se encuentran por encima de él (y por debajo del 10-percentil).
+Una vez obtenidas las mediciones, se calcula un promedio del mismo. La carga y guardado de imágenes se ejecuta anterior y posteriormente a la corrida del filtro, por lo que no afecta a las mediciones. Para evitar la presencia de \textit{outliers}, se calcula la desviación estándar de las mediciones y a partir de él, el 90-percentil. Luego, removimos todos los valores que se encuentran por encima de él (y por debajo del 10-percentil).
 
-El código utilizado para las mediciones se encuentra en el archivo \textit{tp2.c}, método \textit{void correr_filtro_imagen}. A su vez, se utilizaron los scripts \textit{mediciones_filtros.py} y \textit{armar_histograma.py} (ubicados en la carpeta \textit{tests}) para facilitar el análisis de rendimiento de los filtros. Los archivos con los datos de las mediciones se encuentran en la carpeta 'Mediciones' y los códigos de los experimentos se encuentran en la carpeta 'Filtros', con el sufijo 'exp' o similares.
+El código utilizado para las mediciones se encuentra en el archivo \textit{tp2.c}, método \textit{void correr_filtro_imagen}. A su vez, se utilizaron los scripts \textit{mediciones_filtros.py} y \textit{armar_histograma.py} (ubicados en la carpeta \textit{tests}) para facilitar el análisis de rendimiento de los filtros. Los archivos con los datos de las mediciones se encuentran en la carpeta \textit{Mediciones} y los códigos de los experimentos se encuentran en la carpeta \textit{Filtros}, con el sufijo 'exp' o similares.
 Las mediciones se realizaron en Ubuntu 14.04, con 4GB de memoria RAM DDR2 y un procesador Intel Core 2 Quad Q9550 corriendo a una frecuencia de 2830MHz.
 \newpage
 \section{Filtros} 
@@ -213,7 +213,7 @@ La implementación realizada en C itera sobre la imagen con dos ciclos anidados 
 
 \begin{figure}[H]
   \begin{center}
-	\includegraphics[scale=0.77]{imagenes/rotarC.png}
+	\includegraphics[scale=0.66]{imagenes/rotarC.png}
 	\caption{Comparación de los tiempos de ejecución de cada implementación}
 	\label{rotar_asmvsc}
   \end{center}
@@ -233,13 +233,13 @@ La instrucción principal de este filtro, como mencionamos anteriormente, es \te
 
 \begin{figure}[H]
   \begin{center}
-	\includegraphics[scale=0.77]{imagenes/rotarExp.png}
+	\includegraphics[scale=0.66]{imagenes/rotarExp.png}
 	\caption{Comparación de los tiempos de ejecución}
 	\label{rotar_exp}
   \end{center}
 \end{figure}
 
-Los resultados coinciden con lo esperado, donde los tiempos de ejecución del filtro operando con la instrucción \textit{shuffle} son menores al resto, y a su vez, la versión en C sigue siendo la menos eficiente, ya que opera píxel por píxel e implica más accesos a memoria. También podemos notar que las diferencias entre las implementaciones se hacen más notorias a medida que aumenta la cantidad de datos a procesar. Concluimos que el empaquetado y desempaquetado de datos conlleva un costo mayor para reordenar datos a su equivalente utilizando la instrucción \textit{shuffle}.
+Los resultados coinciden con lo esperado, donde los tiempos de ejecución del filtro operando con la instrucción \textit{shuffle} son menores al resto (hasta un 50\% mejor que la implementación de control), pero los tiempos de ejecución empaquetando y desempaquetando son mucho mayores, hasta un 200\% peor en promedio. Concluimos que el empaquetado y desempaquetado de datos conlleva un costo mayor para reordenar datos a su equivalente utilizando la instrucción \textit{shuffle}.
 
 \newpage
 
@@ -406,6 +406,6 @@ Para analizar lo dicho, se ejecutó ambas implementaciones en C de la manera des
   \end{center}
 \end{figure}
 
-Como se puede observar en la figura~\ref{colorizar_exp}, los tiempos de ejecución de la implementación del experimento resultaron ser peores que aquellos de la implementación de control, resultando ser aproximadamente un 4\% más lento. Sin embargo, frente a la implementación sin optimizaciones, el experimento dio resultados positivos. Por lo tanto, podemos concluir que dentro de las optimizaciones del compilador, ya se incluye una mecánica similar a la propuesta en el experimento, almacenando los resultados parciales. Suponemos que la implementación del experimento resultó ser incluso peor porque posee más líneas de código.
+Como se puede observar en la figura~\ref{colorizar_exp}, los tiempos de ejecución de la implementación del experimento resultaron ser peores que aquellos de la implementación de control, resultando ser aproximadamente un 15\% más lento. Sin embargo, frente a la implementación sin optimizaciones, el experimento dio resultados positivos. Por lo tanto, podemos concluir que dentro de las optimizaciones del compilador, ya se incluye una mecánica similar a la propuesta en el experimento, almacenando los resultados parciales. Suponemos que la implementación del experimento resultó ser incluso peor porque posee más líneas de código.
 
 \end{document}
