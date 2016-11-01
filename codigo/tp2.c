@@ -148,10 +148,6 @@ void correr_filtro_imagen(configuracion_t *config, aplicador_fn_t aplicador)
 			}
 		}
 		media = res / n;
-		// for (int i = 0; i < n; i++)
-		// 	sumatoria += (mediciones[i] - media) * (mediciones[i] - media);
-		// varianza = sumatoria / (double) n;
-		// sd = sqrt(varianza);
 		fprintf(fp, "Archivo: %s\n", basename(config->archivo_entrada));
 		fprintf(fp, "Promedio: %f\n", media);
 		fprintf(fp, "Desviacion estandar: %f\n", sd);
