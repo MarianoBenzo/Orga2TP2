@@ -162,22 +162,24 @@ Este filtro implica dividir la imagen original en cuatro cuadrantes, manteniendo
 Debido a que solo recorremos la mitad de las filas, la cantidad de iteraciones que se realizan equivale a la cantidad de columnas multiplicado por la cantidad de filas dividido dos. Ya que se itera por columnas, en la implementación en lenguaje ensamblador se mantiene un contador que aumenta en cada iteración y, una vez que se alcanzó la cantidad total de columnas, se asume que se terminó de recorrer la fila y se realizan las operaciones pertinentes para mover los punteros a la fila posterior a la siguiente en memoria (se saltea una fila, como se explicó anteriormente).
 \bigskip
 
-El procesamiento en lenguaje ensamblador se realiza de a cuatro pixeles por iteración, por lo que se divide la cantidad total de columnas por cuatro. No es posible procesar de a más pixeles a la vez porque cada uno ocupa 4 bytes y solo entran cuatro de ellos en los registros de SIMD. Dado que el filtro consta básicamente de reordenar datos, se utiliza una única instrucción para su procesamiento. La misma es la instrucción \textit{shuffle}, la cual se ejecuta de manera tal que por cada cuatro pixeles en el registro, se ubican de forma subsiguiente a aquellos de la primera y tercera columna y se los almacena en memoria en cada puntero a cada cuadrante de la imagen destino, descartando a los otros dos.
+El procesamiento en lenguaje ensamblador se realiza de a cuatro pixeles por iteración, por lo que se divide la cantidad total de columnas por cuatro. Si bien es posible operar de a ocho pixeles, dado que las imágenes de entrada son múltiplos de cuatro (por precondición), se procesa de a cuatro.
+
+Ya que el filtro consta básicamente de reordenar datos, se utiliza una única instrucción para su procesamiento. La misma es la instrucción \textit{shuffle}, la cual se ejecuta de manera tal que por cada cuatro pixeles en el registro, se ubican de forma subsiguiente a aquellos de la primera y tercera columna y se los almacena en memoria en cada puntero a cada cuadrante de la imagen destino, descartando a los otros dos.
 \bigskip
 
 Dentro de la implementación en C, se recorre la imagen fuente iterando una cantidad de veces equivalente a $\frac{filas}{2} * \frac{cols}{2}$, lo cual representa al tamaño de la imagen de cada cuadrante. De esta manera, el programa selecciona los pixeles de fila y columna par, los cuales son los que se guardarán en la imagen destino. Se itera píxel por píxel, donde en cada iteración se crean cuatro punteros a las direcciones de memoria correspondientes a cada cuadrante de la imagen destino.
 
-Ya que se procesa una mayor cantidad de pixeles por iteración en la implementación en lenguaje ensamblador, se espera que sus tiempos de ejecución sean menores a su análogo en C.
+Las mediciones se realizaron según lo descrito al principio del informe. Ya que se procesa una mayor cantidad de pixeles por iteración en la implementación en lenguaje ensamblador, se espera que sus tiempos de ejecución sean menores a su análogo en C.
 \\
 \begin{figure}[H]
   \begin{center}
-	\includegraphics[scale=0.77]{imagenes/smalltilesC.png}
+	\includegraphics[scale=0.66]{imagenes/smalltilesC.png}
 	\caption{Comparación de los tiempos de ejecución de cada implementación}
 	\label{smalltiles_asmvsc}
   \end{center}
 \end{figure}
 
-Como se puede apreciar en~\ref{smalltiles_asmvsc}, hay una clara diferencia entre las distintas implementaciones. Como se suponía, la implementación en lenguaje ensamblador consume una cantidad de tiempo mucho menor para procesar las imágenes de gran tamaño que su análogo en C. Dado que la principal diferencia entre ambas implementaciones es la cantidad de pixeles que se procesan por iteración, suponemos que esta es la razón mayor de por qué se aprecia semejante diferencia.
+Como se puede apreciar en la figura~\ref{smalltiles_asmvsc}, hay una clara diferencia entre el tiempo de ejecución del filtro en lenguaje ensamblador frente a su análogo en C (sin optimizar). Particularmente, la medición de la implementación en lenguaje ensamblador es un 95\% menor. Sin embargo, al aplicar las optimizaciones del compilador, la diferencia se reduce abruptamente, siendo la implementación compilada con el flag \textit{O1} un 65\% menor que la implementación sin optimizaciones; y al aplicar todas las optimizaciones posibles, se obtiene una diferencia del 90\%, acercándolo a los tiempos de ejecución de la implementación en lenguaje ensamblador. Creemos que las optimizaciones hacen mucha diferencia porque la implementación en C hace uso de varios punteros en cada iteración (siempre haciendo el mismo cálculo con respecto al índice), por lo que le da lugar al compilador a varias mejoras.
 
 \subsubsection{Experimentacion}
 \textbf{Hipótesis}
@@ -188,17 +190,27 @@ Si bien es de esperar que la operación \textit{shift} consuma menos tiempo de e
 
 \textbf{Resultados}
 
-Para lograr analizar la diferencia entre las instrucciones, medimos los tiempos de ejecución de ambas implementaciones en lenguaje ensamblador (según lo descrito al principio del trabajo práctico) y las comparamos. 
+Para lograr analizar la diferencia entre las instrucciones, medimos los tiempos de ejecución de ambas implementaciones en lenguaje ensamblador (según lo descrito al principio del trabajo práctico) y las comparamos frente a la medición de control (implementación en C con el flag \textit{O3}). Sin embargo, al ejecutarlo sobre datos de entrada más chicos, obtuvimos resultados diferentes.
 \\
 \begin{figure}[H]
   \begin{center}
-	\includegraphics[scale=0.77]{imagenes/smalltilesExp.png}
+	\includegraphics[scale=0.66]{imagenes/smalltilesExpC}
+	\caption{Comparación de los tiempos de ejecución del experimento}
+	\label{smalltiles_chico}
+  \end{center}
+\end{figure}
+
+En este caso, se midieron los tiempos de ejecución sobre una imagen de tamaño 256x256 pixels. Como se puede observar, el uso de las instrucciones \textit{insert} y \textit{extract} resultó ser más eficiente, hasta un 8\% mejor que la implementación regular en lenguaje ensamblador (utilizando \textit{shuffle}). Luego, al realizar las mediciones sobre el tamaño de imagen elegido (768x768 pixels) se obtuvieron los siguientes resultados:
+\\
+\begin{figure}[H]
+  \begin{center}
+	\includegraphics[scale=0.66]{imagenes/smalltilesExp.png}
 	\caption{Comparación de los tiempos de ejecución del experimento}
 	\label{smalltiles_exp}
   \end{center}
 \end{figure}
 
-Tal como se muestra en el gráfico, los tiempos de ejecución son similares para datos de entrada de tamaño pequeño (a tal punto que se los podría considerar equivalentes), pero para imágenes más grandes, la diferencia se acentúa. Desconocemos por qué la diferencia entre instrucciones implica mayor costo para datos de entrada más grandes, pero podemos concluir que, en líneas generales, las operaciones de \textit{insert} y \textit{extract} implican un mayor costo que simplemente utilizar \textit{shuffle} para reordenar los datos, probablemente porque implica utilizar dos instrucciones que utilizan la misma unidad de hardware, a diferencia de una.
+Tal como se muestra en la figura~\ref{smalltiles_exp}, los resultados se invirtieron: la instrucción \textit{shuffle} resultó ser más eficiente que su análogo con \textit{insert} y \textit{extract}, hasta un 20\% mejor. Desconocemos por qué para datos de entrada más pequeños el rendimiento es incluso mejor bajo el uso de \textit{insert} y \textit{extract}; probablemente el uso de una mayor cantidad de instrucciones (por más leve que sea la diferencia) tiene su peso cuando se procesan más datos. Sin embargo, podemos concluir que, en líneas generales, es preferible utilizar \textit{shuffle} para reordenar datos.
 
 \newpage
 \subsection{Rotar}
@@ -250,19 +262,17 @@ Como el filtro necesita la información de dos filas para realizar el promedio, 
 \\Se itera sobre la imagen columna por columna, y, una vez que se terminaron de recorrer las dos filas paralelas, se decrementa el contador que contiene la mitad de la cantidad total de filas a recorrer. De esta manera, una vez que dicho contador llegó a cero, se terminó de recorrer la imagen. Como se opera de a 4 pixeles por puntero, se divide la cantidad de columnas (que están en pixeles) por cuatro y los punteros avanzan de a 16 bytes. A su vez, cuando se terminan de recorrer las filas, los punteros avanzan la cantidad de columnas multiplicado por cuatro (bytes), saltándose cada puntero una fila. No se puede operar de a más pixeles por vez porque cada uno ocupa 32 bits, por lo que solo se pueden almacenar cuatro de ellos a la vez en los registros de SIMD.
 \\
 \\
-La implementación realizada en C itera sobre la imagen con dos ciclos anidados (avanzando por columnas) de a 4 pixeles por vez, avanzando de a dos columnas y dos filas a la vez. Simplemente se calcula el promedio en cuatro pixeles y se coloca este valor en la imagen destino en las posiciones de los pixeles procesados. Si bien las cuentas se realizan de manera muy similar a la implementación en lenguaje ensamblador, esta última recorre la imagen más rápido al procesar de a 8 pixeles por iteración, por lo que el rendimiento debería ser mayor.
+La implementación realizada en C itera sobre la imagen con dos ciclos anidados (avanzando por columnas) de a 4 pixeles por vez, avanzando de a dos columnas y dos filas a la vez. Simplemente se calcula el promedio en cuatro pixeles y se coloca este valor en la imagen destino en las posiciones de los pixeles procesados. Si bien las cuentas se realizan de manera muy similar a la implementación en lenguaje ensamblador, esta última recorre la imagen más rápido al procesar de a 8 pixeles por iteración, por lo que el rendimiento debería ser mayor. Las mediciones se realizaron según lo descrito al principio del informe.
 \\
 \begin{figure}[H]
   \begin{center}
-	\includegraphics[scale=0.77]{imagenes/pixelarC.png}
+	\includegraphics[scale=0.66]{imagenes/pixelarC.png}
 	\caption{Comparación de los tiempos de ejecución de cada implementación}
 	\label{pixelar_asmvsc}
   \end{center}
 \end{figure}
 
-Como se puede observar en~\ref{pixelar_asmvsc}, la cantidad de \textit{ticks} de reloj necesarios para ejecutar el mismo filtro en su implementación en C es considerablemente mayor a aquellos necesarios para ejecutar el filtro en su implementación en lenguaje ensamblador, como se suponía. La diferencia aumenta a medida que aumenta el tamaño de los datos de entrada, donde se puede observar que la implementación en C tiene una complejidad lineal, mientras que la implementación en lenguaje ensamblador lo hace en un orden más bajo.
-\\
-Las mediciones se realizaron según lo descrito al principio del informe en Ubuntu 14.04, con 4GB de memoria RAM DDR2 y un procesador Intel Core 2 Quad Q9550 corriendo a una frecuencia de 2830MHz.
+Como se puede observar en la figura~\ref{pixelar_asmvsc}, la cantidad de \textit{ticks} de reloj necesarios para ejecutar el mismo filtro en su implementación en C sin optimizar es considerablemente mayor a aquellos necesarios para ejecutar el filtro en su implementación en lenguaje ensamblador (el cual es un 88\% menor), como se suponía. Al aplicar las optimizaciones del compilador, los tiempos de ejecución mejoran; al compilar con el flag \textit{O1}, se obtuvieron resultados del 50\% mejores con respecto a la implementaicón sin optimización, con el flag \textit{O2} la mejora asciende al 70\%. Curiosamente, el flag \textit{O3} no solo no mejora el tiempo de ejecución, sino que lo empeora en un 13\% con respecto al flag \textit{O2}, por lo que se deduce que las optimizaciones extras incluídas en el mismo fueron futiles.
 
 \subsubsection{Experimentación}
 \textbf{Hipótesis}
@@ -271,10 +281,8 @@ Dentro de las series de operaciones que ejecuta el filtro, existe una división 
 \newline
 \\
 \textbf{Resultados}
-\\Se realizó una medición de la cantidad de \textit{ticks} de reloj del CPU que conllevó ejecutar el filtro para los distintos tamaños de entrada. Únicamente se varió el tamaño de las imágenes y no sus componentes porque las cuentas a realizar son independientes de los valores cromáticos de la imagen, por lo que se descartó que puedan haber variaciones apreciables dependiendo de la imagen en sí.
-\\Las mediciones se realizaron según lo descrito al principio del informe en Ubuntu 14.04, con 4GB de memoria RAM DDR2 y un procesador Intel Core 2 Quad Q9550 corriendo a una frecuencia de 2830MHz.
+\\Se realizó una medición de la cantidad de \textit{ticks} de reloj del CPU que conllevó ejecutar el filtro, según lo descrito al principio del informe.
 \\
-
 \begin{figure}[H]
   \begin{center}
 	\includegraphics[scale=0.77]{imagenes/pixelarExp.png}
@@ -283,11 +291,10 @@ Dentro de las series de operaciones que ejecuta el filtro, existe una división 
   \end{center}
 \end{figure}
 
-Los resultados indican que, si bien existe una tabla \textit{hardcodeada} para las operaciones costosas como multiplicación y división en punto flotante, su costo sigue siendo mayor a aquél de operar la división \textit{shifteando}, pero la diferencia no es tan notable como entre la implementación en C y en lenguaje ensamblador, denotada en la figura~\ref{pixelar_asmvsc}. Es decir, efectivamente el costo insumido no es tan grande, a pesar de que involucre operar con \textit{floats}.
+Los resultados indican que, si bien existe una tabla \textit{hardcodeada} para las operaciones costosas como multiplicación y división en punto flotante, su costo sigue siendo mayor a aquél de operar la división \textit{shifteando}, pero se mantiene una mejora notable frente a la implementación de control. El costo insumido por realizar operaciones de punto flotante es de un 4\% mayor con respecto al uso del \textit{shift}.
 \\Una vez determinado que insume un mayor costo la operación con punto flotante, falta analizar la diferencia en la precisión.
 \\Para analizar qué tanta diferencia hay entre un resultado y otro, utilizamos la herramienta \textit{bmpdiff}, generando imágenes que muestran la diferencia píxel a píxel para cada componente. El parámetro epsilon de la herramienta \textit{bmpdiff} se fijó en cero.
 \\
-
 \begin{figure}[H]
   \begin{center}
 	\includegraphics[scale=0.40]{imagenes/pixelardiffExp.jpeg}
@@ -296,7 +303,7 @@ Los resultados indican que, si bien existe una tabla \textit{hardcodeada} para l
   \end{center}
 \end{figure}
 
-Como se puede observar, las diferencias en la imagen son uniformes, lo que confirma que el color no tuvo incidencia en las operaciones. Si bien parecen ser muchos los pixeles con distintos valores, la diferencia es prácticamente nula: al ejecutar \textit{bmpdiff} una vez más pero con el parámetro epsilon en 1 (es decir, permitiendo que haya un margen de error de $+/-$ uno para cada color) se obtuvieron imágenes en negro para todas las componentes. En otras palabras, la diferencia de precisión es mínima, ya que solo difieren en uno cada componente de cada píxel. Sabiendo esto podemos concluir que a pesar de ser operaciones aproximadas, las mismas solo difieren con el cálculo exacto por $+/-$ uno, lo que implica que es únicamente un tema de redondeo/truncamiento.
+Como se puede observar, las diferencias en la imagen son uniformes, lo que confirma que el color no tuvo incidencia en las operaciones. Si bien parecen ser muchos los pixeles con distintos valores, la diferencia es prácticamente nula: al ejecutar \textit{bmpdiff} una vez más pero con el parámetro epsilon en 1 (es decir, permitiendo que haya un margen de error de $+/-$ uno para cada color) se obtuvieron imágenes en negro para todas las componentes. En otras palabras, solo difieren en uno cada componente de cada píxel. Luego, podemos concluir que no se produce una pérdida de precisión por utilizar uno u otro método, sino una diferencia en términos de redondeo.
 
 \newpage
 \subsection{Combinar}
