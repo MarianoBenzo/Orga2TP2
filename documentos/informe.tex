@@ -258,10 +258,13 @@ Los resultados coinciden con lo esperado, donde los tiempos de ejecución del fi
 \subsection{Pixelar}
 \subsubsection{Implementación}
 Como el filtro necesita la información de dos filas para realizar el promedio, recorremos tanto la imagen fuente como la imagen destino con dos punteros. Estos se mueven de forma paralela, es decir, en las mismas columnas pero en filas consecutivas. Al trabajar de esta forma y utilizando instrucciones SIMD podemos aplicar los cambios a ocho pixeles a la vez (cuatro por punteros).
-\\Para no perder precisión, todas las operaciones necesarias para obtener los promedios se realizan en enteros. Una vez calculados (uno por grupo de 4 pixeles), se reemplazan los valores originales de los pixeles en la imagen destino por el valor promedio correspondiente.
-\\Se itera sobre la imagen columna por columna, y, una vez que se terminaron de recorrer las dos filas paralelas, se decrementa el contador que contiene la mitad de la cantidad total de filas a recorrer. De esta manera, una vez que dicho contador llegó a cero, se terminó de recorrer la imagen. Como se opera de a 4 pixeles por puntero, se divide la cantidad de columnas (que están en pixeles) por cuatro y los punteros avanzan de a 16 bytes. A su vez, cuando se terminan de recorrer las filas, los punteros avanzan la cantidad de columnas multiplicado por cuatro (bytes), saltándose cada puntero una fila. No se puede operar de a más pixeles por vez porque cada uno ocupa 32 bits, por lo que solo se pueden almacenar cuatro de ellos a la vez en los registros de SIMD.
+
+Para no perder precisión, todas las operaciones necesarias para obtener los promedios se realizan en enteros. Una vez calculados (uno por grupo de 4 pixeles), se reemplazan los valores originales de los pixeles en la imagen destino por el valor promedio correspondiente.
 \\
+
+Se itera sobre la imagen columna por columna, y, una vez que se terminaron de recorrer las dos filas paralelas, se decrementa el contador que contiene la mitad de la cantidad total de filas a recorrer. De esta manera, una vez que dicho contador llegó a cero, se terminó de recorrer la imagen. Como se opera de a 4 pixeles por puntero, se divide la cantidad de columnas (que están en pixeles) por cuatro y los punteros avanzan de a 16 bytes. A su vez, cuando se terminan de recorrer las filas, los punteros avanzan la cantidad de columnas multiplicado por cuatro (bytes), saltándose cada puntero una fila. No se puede operar de a más pixeles por vez porque cada uno ocupa 32 bits, por lo que solo se pueden almacenar cuatro de ellos a la vez en los registros de SIMD.
 \\
+
 La implementación realizada en C itera sobre la imagen con dos ciclos anidados (avanzando por columnas) de a 4 pixeles por vez, avanzando de a dos columnas y dos filas a la vez. Simplemente se calcula el promedio en cuatro pixeles y se coloca este valor en la imagen destino en las posiciones de los pixeles procesados. Si bien las cuentas se realizan de manera muy similar a la implementación en lenguaje ensamblador, esta última recorre la imagen más rápido al procesar de a 8 pixeles por iteración, por lo que el rendimiento debería ser mayor. Las mediciones se realizaron según lo descrito al principio del informe.
 \\
 \begin{figure}[H]
@@ -276,24 +279,28 @@ Como se puede observar en la figura~\ref{pixelar_asmvsc}, la cantidad de \textit
 
 \subsubsection{Experimentación}
 \textbf{Hipótesis}
-\newline
+
+
 Dentro de las series de operaciones que ejecuta el filtro, existe una división entera que efectuamos con la instrucción \textit{psrld}. En esta experimentación queremos ver la diferencia, tanto en tiempo como en precisión, al utilizar una división de punto flotante. Entendemos que en este caso no tiene sentido utilizarla, porque los decimales que perdemos al utilizar la división entera los ibamos a descartar de todas formas, ya que la información en los pixeles se encuentra en enteros. Aún así, nos interesa ver las diferencias entre ambos métodos. Suponemos que la diferencia en rendimiento no debería variar mucho, ya que la división en punto flotante se realiza a través de una tabla \textit{hardcodeada}, y analizaremos la variación en la precisión (la cual debería ser peor para la división en punto flotante).
 \newline
-\\
+
 \textbf{Resultados}
-\\Se realizó una medición de la cantidad de \textit{ticks} de reloj del CPU que conllevó ejecutar el filtro, según lo descrito al principio del informe.
+
+Se realizó una medición de la cantidad de \textit{ticks} de reloj del CPU que conllevó ejecutar el filtro, según lo descrito al principio del informe.
 \\
 \begin{figure}[H]
   \begin{center}
-	\includegraphics[scale=0.77]{imagenes/pixelarExp.png}
+	\includegraphics[scale=0.66]{imagenes/pixelarExp.png}
 	\caption{Comparación de los tiempos de ejecución}
 	\label{pixelar_exp}
   \end{center}
 \end{figure}
 
 Los resultados indican que, si bien existe una tabla \textit{hardcodeada} para las operaciones costosas como multiplicación y división en punto flotante, su costo sigue siendo mayor a aquél de operar la división \textit{shifteando}, pero se mantiene una mejora notable frente a la implementación de control. El costo insumido por realizar operaciones de punto flotante es de un 4\% mayor con respecto al uso del \textit{shift}.
-\\Una vez determinado que insume un mayor costo la operación con punto flotante, falta analizar la diferencia en la precisión.
-\\Para analizar qué tanta diferencia hay entre un resultado y otro, utilizamos la herramienta \textit{bmpdiff}, generando imágenes que muestran la diferencia píxel a píxel para cada componente. El parámetro epsilon de la herramienta \textit{bmpdiff} se fijó en cero.
+
+Una vez determinado que insume un mayor costo la operación con punto flotante, falta analizar la diferencia en la precisión.
+
+Para analizar qué tanta diferencia hay entre un resultado y otro, utilizamos la herramienta \textit{bmpdiff}, generando imágenes que muestran la diferencia píxel a píxel para cada componente. El parámetro epsilon de la herramienta \textit{bmpdiff} se fijó en cero.
 \\
 \begin{figure}[H]
   \begin{center}
@@ -309,6 +316,7 @@ Como se puede observar, las diferencias en la imagen son uniformes, lo que confi
 \subsection{Combinar}
 \subsubsection{Implementación}
 Ya que el filtro se ejecuta sobre el reflejo vertical de la imagen fuente, en lenguaje ensamblador se mantiene como invariante un puntero a la imagen invertida. Es decir, a medida que se recorre la matriz de la imagen fuente, este puntero la recorre de atrás hacia delante. Por lo tanto, avanza restándole posiciones de memoria. Por otro lado, como recorre de atrás hacia delante, levanta los pixeles de memoria de manera invertida, por lo que en cada iteración del ciclo, luego de levantar los pixeles, se reordenan de manera que coincidan vectorialmente con aquellos contenidos en el registro que opera sobre la matriz comúnmente (es decir, de delante hacia atrás).
+\\
 
 Para no perder precisión, antes de realizar la resta entre pixeles, se extiende cada componente del píxel a un entero de 32 bits y se hacen todas las operaciones intermedias operando como \textit{floats}. Además, como la cuenta incluye el uso de constantes, las mismas se guardan en memoria como datos de solo lectura. Para no perder rendimiento levantándolas en cada iteración del ciclo, se guardan en un registro específico antes de empezar a recorrer la imagen.
 
@@ -325,12 +333,11 @@ La implementación realizada en C itera sobre la imagen con dos ciclos anidados 
   \end{center}
 \end{figure}
 
-Como se puede observar en la figura~\ref{combinar_asmvsc}, la cantidad de \textit{ticks} de reloj necesarios para ejecutar el filtro en su implementación en C es mayor a su análoga en lenguaje ensamblador, incluso utilizando las optimizaciones del compilador. La diferencia es más notoria que en otros filtros, ya que porcentualmente, la medición de la implementación en lenguaje ensamblador es un 83\% menor que la medición de la implementación con la mayor cantidad de optimizaciones del compilador (\textit{O3}). La implementación con el flag \textit{O2} resultó ser un poco menor a aquella con el flag \textit{O3}, por lo que se deduce que las optimizaciones extra que conlleva \textit{O3} frente a \textit{O2} no propician ninguna mejora (y resulta en un rendimiento ligeramente menor) en este filtro. Por otra parte, la diferencia entre estos últimos y \textit{O1} es casi del 20\%, mientras que frente a implementación sin optimización resultaron ser un 52\% mejor.
+Como se puede observar en la figura~\ref{combinar_asmvsc}, la cantidad de \textit{ticks} de reloj necesarios para ejecutar el filtro en su implementación en C es mayor a su análoga en lenguaje ensamblador, incluso utilizando las optimizaciones del compilador. La diferencia es más notoria que en otros filtros, ya que, porcentualmente, la medición de la implementación en lenguaje ensamblador es un 83\% menor que la medición de la implementación con la mayor cantidad de optimizaciones del compilador (\textit{O3}). La implementación con el flag \textit{O2} resultó ser un poco menor a aquella con el flag \textit{O3}, por lo que se deduce que las optimizaciones extra que conlleva \textit{O3} frente a \textit{O2} no propician ninguna mejora (y resulta en un rendimiento ligeramente menor) en este filtro. Por otra parte, la diferencia entre estos últimos y \textit{O1} es casi del 20\%, mientras que frente a la implementación sin optimización resultaron ser un 52\% mejor. Desconocemos por qué para este filtro en particular las optimizaciones del compilador no mejoraron el rendimiento en la misma proporción que para los demás, pero podemos suponer que se debe a la cantidad de \textit{casteos} necesarios que se realizan en el código en C.
 
 Las mediciones se realizaron según lo descrito al principio del informe, con un parámetro \textit{alpha} de 128.
 \subsubsection{Experimentación}
 \textbf{Hipótesis}
-\newline
 
 Ya que el filtro consta de ejecutar una serie de operaciones, la mayor complejidad del mismo se encuentra en las cuentas que hay que realizar. Si bien la suma y resta de enteros no insume prácticamente ningún costo, dentro de las operaciones a realizar se encuentra una multiplicación con valores de punto flotante (\textit{alpha}) y la división por 255.0. Ya que \textit{alpha} representa un valor comprendido en [0.00;255.0], si se lo interpreta como un entero, el truncamiento no representa una pérdida de precisión muy importante, y el rendimiento obtenido debería compensar tal pérdida. Así mismo, se puede realizar algo similar con la división por 255.0. Si bien la división por enteros es costosa, es posible dividir el resultado parcial obtenido por 256 en lugar de 255. La operación no insume un mayor costo porque simplemente consta de \textit{shiftear} los bits, en lugar de realizar una división propiamente dicha. Además, ya que la operación se realizaría únicamente con enteros, no es necesario hacer \textit{casteos} intermedios entre punto flotante y enteros, los cuales son muy costosos.
 \newline
@@ -349,7 +356,7 @@ Se realizó una medición de la cantidad de \textit{ticks} de reloj del CPU que 
 
 Los resultados condicen con lo esperado, donde los tiempos de ejecución del filtro operando únicamente con enteros son menores a aquellos utilizados para operar con punto flotante.
 
-Como se puede observar en la figura~\ref{combinar_exp}, la mejora frente a la implementación de control es del 85\%, un 4\% mejor que la implementación común en lenguaje ensamblador. Queda claro que el rendimiento mejora al operar con enteros, dado a la complejidad de las operaciones en punto flotante, las cuales se hacen más notorias frente a mayor cantidad de datos por procesar, pero falta analizar en cuánto difiere la precisión.
+Como se puede observar en la figura~\ref{combinar_exp}, la mejora frente a la implementación de control es del 85\%, un 4\% mejor que la implementación común en lenguaje ensamblador. Queda claro que el rendimiento mejora al operar con enteros, dado a la complejidad de las operaciones en punto flotante, pero falta analizar en cuánto difiere la precisión.
 \bigskip
 
 Para analizar qué tanta diferencia hay entre un resultado y otro, utilizamos la herramienta \textit{bmpdiff}, generando imágenes que muestran la diferencia píxel a píxel para cada componente. Las imágenes se obtuvieron corriendo el filtro con el parámetro \textit{alpha} de valor 127.484, para realzar las diferencias por pérdida de precisión. El parámetro epsilon de la herramienta \textit{bmpdiff} se fijó en cero.
@@ -390,7 +397,9 @@ Solo se varió el tamaño de las imágenes a probar porque, si bien los máximos
   \end{center}
 \end{figure}
 
-Como se puede observar en la figura~\ref{colorizar_asmvsc}, la diferencia entre la implementación en lenguaje ensamblador y aquella compilada en C sin optimizaciones es muy grande, siendo la medición promedio de la primera un 90\% menor. Sin embargo, una vez aplicadas algunas optimizaciones, la diferencia se achica abruptamente (la diferencia con la implementación compilada con el flag \textit{O1} es casi del 80\%). Suponemos que la diferencia entre la implementación sin optimizar y la optimizada es más notable que en otros filtros por la cantidad de condiciones y líneas de código que se encuentran presentes en la implementación en C, por lo que da lugar a una mayor posibilidad de optimización.
+Como se puede observar en la figura~\ref{colorizar_asmvsc}, la diferencia entre la implementación en lenguaje ensamblador y aquella compilada en C sin optimizaciones es muy grande, siendo la medición promedio de la primera un 90\% menor. Sin embargo, una vez aplicadas algunas optimizaciones, la diferencia se achica abruptamente (la diferencia con la implementación compilada con el flag \textit{O1} es casi del 80\%). Por otro lado, la implementación con el flag \textit{O3} es aproximadamente un 45\% mejor que aquella con el flag \textit{O1}.
+
+Suponemos que la diferencia entre la implementación sin optimizar y la optimizada es más notable que en otros filtros por la cantidad de condiciones y líneas de código que se encuentran presentes en la implementación en C, por lo que da lugar a una mayor posibilidad de optimización.
 \\
 \subsubsection{Experimentación}
 \textbf{Hipótesis}
@@ -401,6 +410,7 @@ Almacenando estos resultados parciales, se reducen los accesos a memoria en un o
 
 Los accesos a memoria deberían conformar una parte considerable del costo insumido por la implementación en C, por lo que se espera que, al reducirlos, la diferencia de tiempos entre la implementación en ensamblador y la implementación en C sea menor a aquella de los demás filtros (dado que en este filtro se procesa de a dos en lugar de a cuatro).
 \\
+
 \textbf{Resultados}
 
 Para analizar lo dicho, se ejecutó ambas implementaciones en C de la manera descrita al principio del trabajo práctico y se comparó ambos resultados, utilizando el flag \textit{O3} para la compilación.
@@ -413,6 +423,6 @@ Para analizar lo dicho, se ejecutó ambas implementaciones en C de la manera des
   \end{center}
 \end{figure}
 
-Como se puede observar en la figura~\ref{colorizar_exp}, los tiempos de ejecución de la implementación del experimento resultaron ser peores que aquellos de la implementación de control, resultando ser aproximadamente un 15\% más lento. Sin embargo, frente a la implementación sin optimizaciones, el experimento dio resultados positivos. Por lo tanto, podemos concluir que dentro de las optimizaciones del compilador, ya se incluye una mecánica similar a la propuesta en el experimento, almacenando los resultados parciales. Suponemos que la implementación del experimento resultó ser incluso peor porque posee más líneas de código.
+Como se puede observar en la figura~\ref{colorizar_exp}, los tiempos de ejecución de la implementación del experimento resultaron ser peores que aquellos de la implementación de control, resultando ser aproximadamente un 15\% más lento. Sin embargo, frente a la implementación sin optimizaciones, el experimento dio resultados positivos. Por lo tanto, podemos concluir que dentro de las optimizaciones del compilador ya se incluye una mecánica similar a la propuesta en el experimento, almacenando los resultados parciales. Suponemos que la implementación del experimento resultó ser incluso peor porque posee más líneas de código.
 
 \end{document}
